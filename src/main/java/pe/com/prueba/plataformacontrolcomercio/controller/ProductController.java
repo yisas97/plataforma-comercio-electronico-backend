@@ -1,6 +1,8 @@
 package pe.com.prueba.plataformacontrolcomercio.controller;
 
+import jakarta.servlet.http.HttpServletRequest;
 import jakarta.validation.Valid;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -13,61 +15,266 @@ import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
+import pe.com.prueba.plataformacontrolcomercio.dto.ProductDTO;
+import pe.com.prueba.plataformacontrolcomercio.mapper.ProductMapper;
 import pe.com.prueba.plataformacontrolcomercio.model.Product;
 import pe.com.prueba.plataformacontrolcomercio.service.IProductService;
+import pe.com.prueba.plataformacontrolcomercio.util.TokenUtils;
 
 import java.util.List;
+import java.util.Optional;
+import java.util.stream.Collectors;
 
 @RestController
 @RequestMapping("/api/products")
+@Slf4j
 public class ProductController {
 
     private final IProductService productService;
+    private final TokenUtils tokenUtils;
+    private final ProductMapper productMapper;
 
     @Autowired
-    public ProductController(IProductService productService) {
+    public ProductController(IProductService productService, TokenUtils tokenUtils,
+            ProductMapper productMapper) {
         this.productService = productService;
+        this.tokenUtils = tokenUtils;
+        this.productMapper = productMapper;
+    }
+
+    @GetMapping("/all")
+    public ResponseEntity<List<ProductDTO>> getAllProducts(HttpServletRequest request) {
+        String role = tokenUtils.getRoleFromRequest(request);
+
+        if ("ROLE_ADMIN".equals(role)) {
+            List<ProductDTO> products = productService.getAllProducts().stream()
+                    .map(productMapper::toDTO)
+                    .collect(Collectors.toList());
+            return ResponseEntity.ok(products);
+        } else {
+            return ResponseEntity.status(HttpStatus.FORBIDDEN).build();
+        }
     }
 
     @GetMapping
-    public ResponseEntity<List<Product>> getAllProducts() {
-        return ResponseEntity.ok(productService.getAllProducts());
+    public ResponseEntity<List<ProductDTO>> getMyProducts(HttpServletRequest request) {
+        Long producerId = tokenUtils.getProducerIdFromRequest(request);
+        if (producerId == null) {
+            return ResponseEntity.status(HttpStatus.FORBIDDEN).build();
+        }
+
+        log.info("getMyProducts producer id: " + producerId);
+        List<ProductDTO> products = productService.getProductsByProducerId(producerId).stream()
+                .map(productMapper::toDTO)
+                .collect(Collectors.toList());
+        log.info("getMyProducts products: " + products);
+        return ResponseEntity.ok(products);
     }
 
     @GetMapping("/{id}")
-    public ResponseEntity<Product> getProductById(@PathVariable Long id) {
-        return productService.getProductById(id)
-                .map(ResponseEntity::ok)
-                .orElse(ResponseEntity.notFound().build());
+    public ResponseEntity<ProductDTO> getProductById(@PathVariable Long id, HttpServletRequest request) {
+        Long producerId = tokenUtils.getProducerIdFromRequest(request);
+        if (producerId == null) {
+            return ResponseEntity.status(HttpStatus.FORBIDDEN).build();
+        }
+
+        Optional<Product> product = productService.getProductById(id);
+
+        if (product.isPresent() && product.get().getProducer().getId().equals(producerId)) {
+            return ResponseEntity.ok(productMapper.toDTO(product.get()));
+        } else {
+            return ResponseEntity.notFound().build();
+        }
     }
 
     @GetMapping("/search")
-    public ResponseEntity<List<Product>> searchProducts(@RequestParam String name) {
-        return ResponseEntity.ok(productService.searchProductsByName(name));
+    public ResponseEntity<List<ProductDTO>> searchProducts(@RequestParam String name, HttpServletRequest request) {
+        Long producerId = tokenUtils.getProducerIdFromRequest(request);
+        if (producerId == null) {
+            return ResponseEntity.status(HttpStatus.FORBIDDEN).build();
+        }
+
+        List<ProductDTO> products = productService.searchProductsByNameAndProducerId(name, producerId).stream()
+                .map(productMapper::toDTO)
+                .collect(Collectors.toList());
+        return ResponseEntity.ok(products);
     }
 
-    @GetMapping("/category/{category}")
-    public ResponseEntity<List<Product>> getProductsByCategory(@PathVariable String category) {
-        return ResponseEntity.ok(productService.getProductsByCategory(category));
+
+    @GetMapping("/by-category/{categoryId}")
+    public ResponseEntity<List<Product>> getProductsByCategoryId(@PathVariable Long categoryId, HttpServletRequest request) {
+        Long producerId = tokenUtils.getProducerIdFromRequest(request);
+        if (producerId == null) {
+            return ResponseEntity.status(HttpStatus.FORBIDDEN).build();
+        }
+
+        return ResponseEntity.ok(productService.getProductsByCategoryIdAndProducerId(categoryId, producerId));
+    }
+
+    @GetMapping("/by-tag/{tagId}")
+    public ResponseEntity<List<Product>> getProductsByTagId(@PathVariable Long tagId, HttpServletRequest request) {
+        Long producerId = tokenUtils.getProducerIdFromRequest(request);
+        if (producerId == null) {
+            return ResponseEntity.status(HttpStatus.FORBIDDEN).build();
+        }
+
+        return ResponseEntity.ok(productService.getProductsByTagIdAndProducerId(tagId, producerId));
+    }
+
+    @GetMapping("/filter")
+    public ResponseEntity<List<Product>> filterProducts(
+            @RequestParam(required = false) List<Long> categoryIds,
+            @RequestParam(required = false) List<Long> tagIds,
+            HttpServletRequest request) {
+
+        Long producerId = tokenUtils.getProducerIdFromRequest(request);
+        if (producerId == null) {
+            return ResponseEntity.status(HttpStatus.FORBIDDEN).build();
+        }
+
+        if ((categoryIds == null || categoryIds.isEmpty()) && (tagIds == null || tagIds.isEmpty())) {
+            return ResponseEntity.ok(productService.getProductsByProducerId(producerId));
+        }
+
+        if (tagIds == null || tagIds.isEmpty()) {
+            return ResponseEntity.ok(productService.getProductsByCategoryIdAndProducerId(categoryIds.get(0), producerId));
+        }
+
+        if (categoryIds == null || categoryIds.isEmpty()) {
+            return ResponseEntity.ok(productService.getProductsByTagIdAndProducerId(tagIds.get(0), producerId));
+        }
+
+        return ResponseEntity.ok(productService.getProductsByCategoryIdsAndTagIdsAndProducerId(categoryIds, tagIds, producerId));
     }
 
     @PostMapping
-    public ResponseEntity<Product> createProduct(@Valid @RequestBody Product product) {
-        Product newProduct = productService.createProduct(product);
-        return ResponseEntity.status(HttpStatus.CREATED).body(newProduct);
+    public ResponseEntity<Product> createProduct(@Valid @RequestBody Product product, HttpServletRequest request) {
+        Long producerId = tokenUtils.getProducerIdFromRequest(request);
+        if (producerId == null) {
+            return ResponseEntity.status(HttpStatus.FORBIDDEN).build();
+        }
+
+        try {
+            Product newProduct = productService.createProduct(product, producerId);
+            return ResponseEntity.status(HttpStatus.CREATED).body(newProduct);
+        } catch (IllegalArgumentException e) {
+            return ResponseEntity.badRequest().build();
+        }
     }
 
     @PutMapping("/{id}")
-    public ResponseEntity<Product> updateProduct(@PathVariable Long id, @Valid @RequestBody Product product) {
-        return productService.updateProduct(id, product)
-                .map(ResponseEntity::ok)
-                .orElse(ResponseEntity.notFound().build());
+    public ResponseEntity<Product> updateProduct(@PathVariable Long id, @Valid @RequestBody Product product, HttpServletRequest request) {
+        Long producerId = tokenUtils.getProducerIdFromRequest(request);
+        if (producerId == null) {
+            return ResponseEntity.status(HttpStatus.FORBIDDEN).build();
+        }
+
+        try {
+            return productService.updateProduct(id, product, producerId)
+                    .map(ResponseEntity::ok)
+                    .orElse(ResponseEntity.notFound().build());
+        } catch (IllegalArgumentException e) {
+            return ResponseEntity.status(HttpStatus.FORBIDDEN).build();
+        }
     }
 
     @DeleteMapping("/{id}")
-    public ResponseEntity<Void> deleteProduct(@PathVariable Long id) {
-        return productService.deleteProduct(id)
-                ? ResponseEntity.noContent().build()
-                : ResponseEntity.notFound().build();
+    public ResponseEntity<Void> deleteProduct(@PathVariable Long id, HttpServletRequest request) {
+        Long producerId = tokenUtils.getProducerIdFromRequest(request);
+        if (producerId == null) {
+            return ResponseEntity.status(HttpStatus.FORBIDDEN).build();
+        }
+
+        try {
+            return productService.deleteProduct(id, producerId)
+                    ? ResponseEntity.noContent().build()
+                    : ResponseEntity.notFound().build();
+        } catch (IllegalArgumentException e) {
+            return ResponseEntity.status(HttpStatus.FORBIDDEN).build();
+        }
+    }
+
+    @PostMapping("/{productId}/categories/{categoryId}")
+    public ResponseEntity<Void> addCategoryToProduct(
+            @PathVariable Long productId,
+            @PathVariable Long categoryId,
+            HttpServletRequest request) {
+
+        Long producerId = tokenUtils.getProducerIdFromRequest(request);
+        if (producerId == null) {
+            return ResponseEntity.status(HttpStatus.FORBIDDEN).build();
+        }
+
+        try {
+            boolean success = productService.addCategoryToProduct(productId, categoryId, producerId);
+            return success
+                    ? ResponseEntity.noContent().build()
+                    : ResponseEntity.notFound().build();
+        } catch (IllegalArgumentException e) {
+            return ResponseEntity.status(HttpStatus.FORBIDDEN).build();
+        }
+    }
+
+    @DeleteMapping("/{productId}/categories/{categoryId}")
+    public ResponseEntity<Void> removeCategoryFromProduct(
+            @PathVariable Long productId,
+            @PathVariable Long categoryId,
+            HttpServletRequest request) {
+
+        Long producerId = tokenUtils.getProducerIdFromRequest(request);
+        if (producerId == null) {
+            return ResponseEntity.status(HttpStatus.FORBIDDEN).build();
+        }
+
+        try {
+            boolean success = productService.removeCategoryFromProduct(productId, categoryId, producerId);
+            return success
+                    ? ResponseEntity.noContent().build()
+                    : ResponseEntity.notFound().build();
+        } catch (IllegalArgumentException e) {
+            return ResponseEntity.status(HttpStatus.FORBIDDEN).build();
+        }
+    }
+
+    @PostMapping("/{productId}/tags/{tagId}")
+    public ResponseEntity<Void> addTagToProduct(
+            @PathVariable Long productId,
+            @PathVariable Long tagId,
+            HttpServletRequest request) {
+
+        Long producerId = tokenUtils.getProducerIdFromRequest(request);
+        if (producerId == null) {
+            return ResponseEntity.status(HttpStatus.FORBIDDEN).build();
+        }
+
+        try {
+            boolean success = productService.addTagToProduct(productId, tagId, producerId);
+            return success
+                    ? ResponseEntity.noContent().build()
+                    : ResponseEntity.notFound().build();
+        } catch (IllegalArgumentException e) {
+            return ResponseEntity.status(HttpStatus.FORBIDDEN).build();
+        }
+    }
+
+    @DeleteMapping("/{productId}/tags/{tagId}")
+    public ResponseEntity<Void> removeTagFromProduct(
+            @PathVariable Long productId,
+            @PathVariable Long tagId,
+            HttpServletRequest request) {
+
+        Long producerId = tokenUtils.getProducerIdFromRequest(request);
+        if (producerId == null) {
+            return ResponseEntity.status(HttpStatus.FORBIDDEN).build();
+        }
+
+        try {
+            boolean success = productService.removeTagFromProduct(productId, tagId, producerId);
+            return success
+                    ? ResponseEntity.noContent().build()
+                    : ResponseEntity.notFound().build();
+        } catch (IllegalArgumentException e) {
+            return ResponseEntity.status(HttpStatus.FORBIDDEN).build();
+        }
     }
 }

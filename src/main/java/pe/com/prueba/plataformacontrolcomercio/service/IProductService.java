@@ -8,15 +8,26 @@ import java.util.Optional;
 public interface IProductService
 {
     List<Product> getAllProducts();
-
+    List<Product> getProductsByProducerId(Long producerId);
     Optional<Product> getProductById(Long id);
-
     List<Product> searchProductsByName(String name);
+    List<Product> searchProductsByNameAndProducerId(String name, Long producerId);
 
-    List<Product> getProductsByCategory(String category);
-    Product createProduct(Product product);
+    List<Product> getProductsByCategoryIdAndProducerId(Long categoryId, Long producerId);
 
-    Optional<Product> updateProduct(Long id, Product productDetails);
+    List<Product> getProductsByTagId(Long tagId);
+    List<Product> getProductsByTagIdAndProducerId(Long tagId, Long producerId);
 
-    boolean deleteProduct(Long id);
+    List<Product> getProductsByCategoryIdsAndTagIdsAndProducerId(
+            List<Long> categoryIds, List<Long> tagIds, Long producerId);
+
+    Product createProduct(Product product, Long producerId);
+    Optional<Product> updateProduct(Long id, Product product, Long producerId);
+    boolean deleteProduct(Long id, Long producerId);
+
+    boolean addCategoryToProduct(Long productId, Long categoryId, Long producerId);
+    boolean removeCategoryFromProduct(Long productId, Long categoryId, Long producerId);
+
+    boolean addTagToProduct(Long productId, Long tagId, Long producerId);
+    boolean removeTagFromProduct(Long productId, Long tagId, Long producerId);
 }
