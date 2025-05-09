@@ -41,7 +41,6 @@ public class CategoryService implements ICategoryService {
 
     @Override
     public Category createCategory(Category category) {
-        // Verificar si ya existe una categoría con el mismo nombre
         if (categoryRepository.findByName(category.getName()).isPresent()) {
             throw new IllegalArgumentException("Ya existe una categoría con el nombre: " + category.getName());
         }
@@ -59,7 +58,7 @@ public class CategoryService implements ICategoryService {
                     categoryRepository.findByName(categoryDetails.getName()).isPresent()) {
                 throw new IllegalArgumentException("Ya existe una categoría con el nombre: " + categoryDetails.getName());
             }
-
+            existingCategory.setActive(categoryDetails.getActive());
             existingCategory.setName(categoryDetails.getName());
             existingCategory.setDescription(categoryDetails.getDescription());
             existingCategory.setUpdatedAt(LocalDateTime.now());

@@ -36,6 +36,8 @@ public class Category {
 
     private String description;
 
+    private Boolean active;
+
     private LocalDateTime createdAt;
     private LocalDateTime updatedAt;
 

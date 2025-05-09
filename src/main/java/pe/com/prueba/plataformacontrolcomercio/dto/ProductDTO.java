@@ -21,7 +21,6 @@ public class ProductDTO {
     private Set<Long> categoryIds;
     private Set<Long> tagIds;
 
-    // Constructor para convertir de Product a ProductDTO
     public ProductDTO(Product product) {
         this.id = product.getId();
         this.name = product.getName();
@@ -32,12 +31,10 @@ public class ProductDTO {
         this.createdAt = product.getCreatedAt();
         this.updatedAt = product.getUpdatedAt();
 
-        // Obtener el ID del productor
         if (product.getProducer() != null) {
             this.producerId = product.getProducer().getId();
         }
 
-        // Obtener IDs de categorías
         this.categoryIds = product.getProductCategories().stream()
                 .map(pc -> pc.getCategory().getId())
                 .collect(Collectors.toSet());

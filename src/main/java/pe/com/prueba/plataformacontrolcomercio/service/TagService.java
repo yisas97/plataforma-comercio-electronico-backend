@@ -41,7 +41,6 @@ public class TagService implements ITagService {
 
     @Override
     public Tag createTag(Tag tag) {
-        // Verificar si ya existe una etiqueta con el mismo nombre
         if (tagRepository.findByName(tag.getName()).isPresent()) {
             throw new IllegalArgumentException("Ya existe una etiqueta con el nombre: " + tag.getName());
         }

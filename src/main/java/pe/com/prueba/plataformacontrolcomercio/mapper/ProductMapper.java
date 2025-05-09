@@ -38,12 +38,10 @@ public class ProductMapper {
         product.setCreatedAt(dto.getCreatedAt());
         product.setUpdatedAt(dto.getUpdatedAt());
 
-        // Establecer productor
         if (dto.getProducerId() != null) {
             product.setProducer(producerRepository.findById(dto.getProducerId()).orElse(null));
         }
 
-        // Limpiar y añadir categorías
         product.getProductCategories().clear();
         if (dto.getCategoryIds() != null) {
             dto.getCategoryIds().forEach(categoryId -> {
