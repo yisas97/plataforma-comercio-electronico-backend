@@ -27,7 +27,7 @@ public class TokenUtils {
     public TokenUtils(@Value("${app.jwt.secret}") String jwtSecret,
             UserRepository userRepository,
             ProducerRepository producerRepository) {
-        // Convertir la clave secreta String a una SecretKey
+
         this.key = Keys.hmacShaKeyFor(jwtSecret.getBytes(StandardCharsets.UTF_8));
         this.userRepository = userRepository;
         this.producerRepository = producerRepository;
@@ -40,7 +40,7 @@ public class TokenUtils {
      */
     public Long getProducerIdFromRequest(HttpServletRequest request) {
         try {
-            // 1. Obtener el email del usuario del token
+
             String token = extractTokenFromRequest(request);
             if (token == null) {
                 return null;
@@ -51,7 +51,7 @@ public class TokenUtils {
                 return null;
             }
 
-            // 2. Buscar el usuario por email
+
             Optional<User> userOpt = userRepository.findByEmail(userEmail);
             if (userOpt.isEmpty()) {
                 return null;
@@ -59,17 +59,17 @@ public class TokenUtils {
 
             User user = userOpt.get();
 
-            // 3. Verificar si el usuario es un productor
+
             if (!"ROLE_PRODUCER".equals(user.getRole().toString())) {
                 return null;
             }
 
-            // 4. Buscar el productor asociado al usuario
+
             Optional<Producer> producerOpt = producerRepository.findByUserId(user.getId());
             return producerOpt.map(Producer::getId).orElse(null);
 
         } catch (Exception e) {
-            // Log error
+
             e.printStackTrace();
             return null;
         }
@@ -82,7 +82,7 @@ public class TokenUtils {
      */
     public Long getUserIdFromRequest(HttpServletRequest request) {
         try {
-            // 1. Obtener el email del usuario del token
+
             String token = extractTokenFromRequest(request);
             if (token == null) {
                 return null;
@@ -93,12 +93,12 @@ public class TokenUtils {
                 return null;
             }
 
-            // 2. Buscar el usuario por email
+
             Optional<User> userOpt = userRepository.findByEmail(userEmail);
             return userOpt.map(User::getId).orElse(null);
 
         } catch (Exception e) {
-            // Log error
+
             e.printStackTrace();
             return null;
         }
@@ -111,7 +111,7 @@ public class TokenUtils {
      */
     public String getRoleFromRequest(HttpServletRequest request) {
         try {
-            // 1. Obtener el email del usuario del token
+
             String token = extractTokenFromRequest(request);
             if (token == null) {
                 return null;
@@ -122,12 +122,12 @@ public class TokenUtils {
                 return null;
             }
 
-            // 2. Buscar el usuario por email y obtener su rol
+
             Optional<User> userOpt = userRepository.findByEmail(userEmail);
             return userOpt.map(user -> user.getRole().toString()).orElse(null);
 
         } catch (Exception e) {
-            // Log error
+
             e.printStackTrace();
             return null;
         }
@@ -139,12 +139,12 @@ public class TokenUtils {
      * @return El token extraído o null si no se encontró
      */
     private String extractTokenFromRequest(HttpServletRequest request) {
-        // Obtener el encabezado de autorización
+
         String authHeader = request.getHeader("Authorization");
 
-        // Verificar si existe y tiene el formato correcto (Bearer token)
+
         if (authHeader != null && authHeader.startsWith("Bearer ")) {
-            return authHeader.substring(7); // Eliminar "Bearer " del inicio
+            return authHeader.substring(7);
         }
 
         return null;
@@ -157,17 +157,17 @@ public class TokenUtils {
      */
     private String getUserEmailFromToken(String token) {
         try {
-            // Nueva sintaxis de JJWT 0.11.x
+
             Claims claims = Jwts.parserBuilder()
                     .setSigningKey(key)
                     .build()
                     .parseClaimsJws(token)
                     .getBody();
 
-            // El "sub" en tu token es el email del usuario
+
             return claims.getSubject();
         } catch (Exception e) {
-            // Log error
+
             e.printStackTrace();
             return null;
         }

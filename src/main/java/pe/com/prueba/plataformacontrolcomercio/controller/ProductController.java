@@ -148,35 +148,46 @@ public class ProductController {
     }
 
     @PostMapping
-    public ResponseEntity<Product> createProduct(@Valid @RequestBody Product product, HttpServletRequest request) {
+    public ResponseEntity<ProductDTO> createProduct(@Valid @RequestBody ProductDTO productDTO, HttpServletRequest request) {
         Long producerId = tokenUtils.getProducerIdFromRequest(request);
         if (producerId == null) {
             return ResponseEntity.status(HttpStatus.FORBIDDEN).build();
         }
 
+        productDTO.setProducerId(producerId);
+
         try {
-            Product newProduct = productService.createProduct(product, producerId);
-            return ResponseEntity.status(HttpStatus.CREATED).body(newProduct);
+            ProductDTO createdProduct = productService.createProduct(productDTO);
+            return ResponseEntity.status(HttpStatus.CREATED).body(createdProduct);
         } catch (IllegalArgumentException e) {
             return ResponseEntity.badRequest().build();
         }
     }
 
     @PutMapping("/{id}")
-    public ResponseEntity<Product> updateProduct(@PathVariable Long id, @Valid @RequestBody Product product, HttpServletRequest request) {
+    public ResponseEntity<ProductDTO> updateProduct(@PathVariable Long id, @Valid @RequestBody ProductDTO productDTO, HttpServletRequest request)
+    {
         Long producerId = tokenUtils.getProducerIdFromRequest(request);
-        if (producerId == null) {
+        if (producerId == null)
+        {
             return ResponseEntity.status(HttpStatus.FORBIDDEN).build();
         }
 
-        try {
-            return productService.updateProduct(id, product, producerId)
+        productDTO.setId(id);
+        productDTO.setProducerId(
+                producerId);
+
+        try
+        {
+            return productService.updateProduct(productDTO)
                     .map(ResponseEntity::ok)
                     .orElse(ResponseEntity.notFound().build());
-        } catch (IllegalArgumentException e) {
+        } catch (IllegalArgumentException e)
+        {
             return ResponseEntity.status(HttpStatus.FORBIDDEN).build();
         }
     }
+
 
     @DeleteMapping("/{id}")
     public ResponseEntity<Void> deleteProduct(@PathVariable Long id, HttpServletRequest request) {

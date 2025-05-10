@@ -15,6 +15,7 @@ import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Positive;
 import lombok.AllArgsConstructor;
 import lombok.Data;
+import lombok.EqualsAndHashCode;
 import lombok.NoArgsConstructor;
 import lombok.ToString;
 
@@ -28,6 +29,7 @@ import java.util.Set;
 @NoArgsConstructor
 @AllArgsConstructor
 @ToString(exclude = {"producer", "productCategories", "productTags"})
+@EqualsAndHashCode(of = "id")
 public class Product
 {
     @Id
@@ -60,20 +62,7 @@ public class Product
     @JsonIgnore
     private Set<ProductTag> productTags = new HashSet<>();
 
-    @Override
-    public boolean equals(Object o) {
-        if (this == o) return true;
-        if (o == null || getClass() != o.getClass()) return false;
-        Product product = (Product) o;
-        return Objects.equals(id, product.id);
-    }
 
-    @Override
-    public int hashCode() {
-        return Objects.hashCode(id);
-    }
-
-    // Métodos helper para manejar las relaciones
     public void addCategory(Category category) {
         ProductCategory productCategory = new ProductCategory();
         productCategory.setProduct(this);

@@ -1,6 +1,7 @@
 package pe.com.prueba.plataformacontrolcomercio.dto;
 
 import lombok.Data;
+import lombok.NoArgsConstructor;
 import pe.com.prueba.plataformacontrolcomercio.model.Product;
 
 import java.time.LocalDateTime;
@@ -8,6 +9,7 @@ import java.util.Set;
 import java.util.stream.Collectors;
 
 @Data
+@NoArgsConstructor
 public class ProductDTO {
     private Long id;
     private String name;

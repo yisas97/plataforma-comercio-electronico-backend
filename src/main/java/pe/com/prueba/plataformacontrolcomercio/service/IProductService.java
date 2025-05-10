@@ -1,5 +1,6 @@
 package pe.com.prueba.plataformacontrolcomercio.service;
 
+import pe.com.prueba.plataformacontrolcomercio.dto.ProductDTO;
 import pe.com.prueba.plataformacontrolcomercio.model.Product;
 
 import java.util.List;
@@ -21,8 +22,8 @@ public interface IProductService
     List<Product> getProductsByCategoryIdsAndTagIdsAndProducerId(
             List<Long> categoryIds, List<Long> tagIds, Long producerId);
 
-    Product createProduct(Product product, Long producerId);
-    Optional<Product> updateProduct(Long id, Product product, Long producerId);
+    ProductDTO createProduct(ProductDTO productDTO);
+    Optional<ProductDTO> updateProduct(ProductDTO productDTO);
     boolean deleteProduct(Long id, Long producerId);
 
     boolean addCategoryToProduct(Long productId, Long categoryId, Long producerId);

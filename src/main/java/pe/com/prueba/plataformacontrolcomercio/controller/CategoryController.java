@@ -102,7 +102,7 @@ public class CategoryController {
 
     @DeleteMapping("/{id}")
     public ResponseEntity<Void> deleteCategory(@PathVariable Long id, HttpServletRequest request) {
-        // Solo los administradores pueden eliminar categorías
+
         String role = tokenUtils.getRoleFromRequest(request);
         if (!"ROLE_ADMIN".equals(role)) {
             return ResponseEntity.status(HttpStatus.FORBIDDEN).build();

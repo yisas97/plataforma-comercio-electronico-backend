@@ -3,6 +3,8 @@ package pe.com.prueba.plataformacontrolcomercio.service;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import pe.com.prueba.plataformacontrolcomercio.dto.ProductDTO;
+import pe.com.prueba.plataformacontrolcomercio.mapper.ProductMapper;
 import pe.com.prueba.plataformacontrolcomercio.model.Category;
 import pe.com.prueba.plataformacontrolcomercio.model.Producer;
 import pe.com.prueba.plataformacontrolcomercio.model.Product;
@@ -30,6 +32,7 @@ public class ProductService implements IProductService
     private final TagRepository tagRepository;
     private final ProductCategoryRepository productCategoryRepository;
     private final ProductTagRepository productTagRepository;
+    private final ProductMapper productMapper;
 
     @Autowired
     public ProductService(
@@ -38,13 +41,15 @@ public class ProductService implements IProductService
             CategoryRepository categoryRepository,
             TagRepository tagRepository,
             ProductCategoryRepository productCategoryRepository,
-            ProductTagRepository productTagRepository) {
+            ProductTagRepository productTagRepository,
+            ProductMapper productMapper) {
         this.productRepository = productRepository;
         this.producerRepository = producerRepository;
         this.categoryRepository = categoryRepository;
         this.tagRepository = tagRepository;
         this.productCategoryRepository = productCategoryRepository;
         this.productTagRepository = productTagRepository;
+        this.productMapper = productMapper;
     }
 
     @Override
@@ -94,40 +99,55 @@ public class ProductService implements IProductService
     }
 
     @Override
-    public Product createProduct(Product product, Long producerId) {
-        Optional<Producer> producerOpt = producerRepository.findById(producerId);
-        if (producerOpt.isPresent()) {
-            product.setProducer(producerOpt.get());
-            product.setCreatedAt(LocalDateTime.now());
-            product.setUpdatedAt(LocalDateTime.now());
-            return productRepository.save(product);
-        } else {
-            throw new IllegalArgumentException("Productor no encontrado con ID: " + producerId);
+    @Transactional
+    public ProductDTO createProduct(ProductDTO productDTO) {
+
+        if (!producerRepository.existsById(productDTO.getProducerId())) {
+            throw new IllegalArgumentException("Productor no encontrado con ID: " + productDTO.getProducerId());
         }
+
+
+        Product product = productMapper.toEntity(productDTO);
+
+
+        LocalDateTime now = LocalDateTime.now();
+        product.setCreatedAt(now);
+        product.setUpdatedAt(now);
+
+
+        Product savedProduct = productRepository.save(product);
+        return productMapper.toDTO(savedProduct);
     }
 
     @Override
-    public Optional<Product> updateProduct(Long id, Product productDetails, Long producerId) {
-        Optional<Producer> producerOpt = producerRepository.findById(producerId);
+    @Transactional
+    public Optional<ProductDTO> updateProduct(ProductDTO productDTO) {
 
-        if (producerOpt.isEmpty()) {
-            throw new IllegalArgumentException("Productor no encontrado con ID: " + producerId);
+        if (!producerRepository.existsById(productDTO.getProducerId())) {
+            throw new IllegalArgumentException("Productor no encontrado con ID: " + productDTO.getProducerId());
         }
 
-        return productRepository.findById(id).map(existingProduct -> {
-            // Verificar que el producto pertenece al productor
-            if (!existingProduct.getProducer().getId().equals(producerId)) {
-                throw new IllegalArgumentException("Este producto no pertenece al productor especificado");
-            }
+        return productRepository.findById(productDTO.getId())
+                .map(existingProduct -> {
 
-            existingProduct.setName(productDetails.getName());
-            existingProduct.setPrice(productDetails.getPrice());
-            existingProduct.setDescription(productDetails.getDescription());
-            existingProduct.setQuantity(productDetails.getQuantity());
-            existingProduct.setSku(productDetails.getSku());
-            existingProduct.setUpdatedAt(LocalDateTime.now());
-            return productRepository.save(existingProduct);
-        });
+                    if (!existingProduct.getProducer().getId().equals(productDTO.getProducerId())) {
+                        throw new IllegalArgumentException("Este producto no pertenece al productor especificado");
+                    }
+
+
+                    LocalDateTime createdAt = existingProduct.getCreatedAt();
+
+
+                    Product updatedProduct = productMapper.toEntity(productDTO);
+
+
+                    updatedProduct.setCreatedAt(createdAt);
+                    updatedProduct.setUpdatedAt(LocalDateTime.now());
+
+
+                    Product savedProduct = productRepository.save(updatedProduct);
+                    return productMapper.toDTO(savedProduct);
+                });
     }
 
     @Override
@@ -154,17 +174,17 @@ public class ProductService implements IProductService
 
         Product product = productOpt.get();
 
-        // Verificar que el producto pertenece al productor
+
         if (!product.getProducer().getId().equals(producerId)) {
             throw new IllegalArgumentException("Este producto no pertenece al productor especificado");
         }
 
-        // Verificar si ya existe la relación
+
         if (productCategoryRepository.findByProductAndCategory(product, categoryOpt.get()).isPresent()) {
-            return true; // Ya existe la relación, no hacemos nada
+            return true;
         }
 
-        // Agregar la categoría al producto
+
         ProductCategory productCategory = new ProductCategory();
         productCategory.setProduct(product);
         productCategory.setCategory(categoryOpt.get());
@@ -186,19 +206,19 @@ public class ProductService implements IProductService
 
         Product product = productOpt.get();
 
-        // Verificar que el producto pertenece al productor
+
         if (!product.getProducer().getId().equals(producerId)) {
             throw new IllegalArgumentException("Este producto no pertenece al productor especificado");
         }
 
-        // Eliminar la relación si existe
+
         Optional<ProductCategory> productCategoryOpt = productCategoryRepository.findByProductAndCategory(product, categoryOpt.get());
         if (productCategoryOpt.isPresent()) {
             productCategoryRepository.delete(productCategoryOpt.get());
             return true;
         }
 
-        return false; // No existía la relación
+        return false;
     }
 
     @Override
@@ -213,17 +233,17 @@ public class ProductService implements IProductService
 
         Product product = productOpt.get();
 
-        // Verificar que el producto pertenece al productor
+
         if (!product.getProducer().getId().equals(producerId)) {
             throw new IllegalArgumentException("Este producto no pertenece al productor especificado");
         }
 
-        // Verificar si ya existe la relación
+
         if (productTagRepository.findByProductAndTag(product, tagOpt.get()).isPresent()) {
-            return true; // Ya existe la relación, no hacemos nada
+            return true;
         }
 
-        // Agregar la etiqueta al producto
+
         ProductTag productTag = new ProductTag();
         productTag.setProduct(product);
         productTag.setTag(tagOpt.get());
@@ -245,18 +265,18 @@ public class ProductService implements IProductService
 
         Product product = productOpt.get();
 
-        // Verificar que el producto pertenece al productor
+
         if (!product.getProducer().getId().equals(producerId)) {
             throw new IllegalArgumentException("Este producto no pertenece al productor especificado");
         }
 
-        // Eliminar la relación si existe
+
         Optional<ProductTag> productTagOpt = productTagRepository.findByProductAndTag(product, tagOpt.get());
         if (productTagOpt.isPresent()) {
             productTagRepository.delete(productTagOpt.get());
             return true;
         }
 
-        return false; // No existía la relación
+        return false;
     }
 }
