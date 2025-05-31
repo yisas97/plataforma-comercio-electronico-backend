@@ -10,7 +10,7 @@ public class CorsConfig implements WebMvcConfigurer
     @Override
     public void addCorsMappings(CorsRegistry registry) {
         registry.addMapping("/**")
-                .allowedOrigins("http://localhost:4321") // Puerto por defecto de Astro
+                .allowedOrigins("http://localhost:4200") // Puerto por defecto de Astro
                 .allowedMethods("GET", "POST", "PUT", "DELETE", "OPTIONS")
                 .allowedHeaders("*")
                 .allowCredentials(true);

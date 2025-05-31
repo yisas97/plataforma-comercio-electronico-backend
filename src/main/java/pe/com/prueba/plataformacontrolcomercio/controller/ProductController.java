@@ -288,4 +288,66 @@ public class ProductController {
             return ResponseEntity.status(HttpStatus.FORBIDDEN).build();
         }
     }
+
+    @GetMapping("/marketplace")
+    public ResponseEntity<List<ProductDTO>> getMarketplaceProducts() {
+        log.info("Getting all products for marketplace");
+
+        List<ProductDTO> products = productService.getAllProducts().stream()
+                .filter(product -> product.getQuantity() > 0)
+                .map(productMapper::toDTO)
+                .collect(Collectors.toList());
+
+        log.info("Found {} products for marketplace", products.size());
+        return ResponseEntity.ok(products);
+    }
+
+    @GetMapping("/marketplace/{id}")
+    public ResponseEntity<ProductDTO> getMarketplaceProductById(@PathVariable Long id) {
+        log.info("Getting marketplace product with id: {}", id);
+
+        Optional<Product> product = productService.getProductById(id);
+
+        if (product.isPresent() && product.get().getQuantity() > 0) {
+            return ResponseEntity.ok(productMapper.toDTO(product.get()));
+        } else {
+            return ResponseEntity.notFound().build();
+        }
+    }
+
+    @GetMapping("/marketplace/search")
+    public ResponseEntity<List<ProductDTO>> searchMarketplaceProducts(@RequestParam String name) {
+        log.info("Searching marketplace products with name: {}", name);
+
+        List<ProductDTO> products = productService.searchProductsByName(name).stream()
+                .filter(product -> product.getQuantity() > 0)
+                .map(productMapper::toDTO)
+                .collect(Collectors.toList());
+
+        return ResponseEntity.ok(products);
+    }
+
+    @GetMapping("/marketplace/by-category/{categoryId}")
+    public ResponseEntity<List<ProductDTO>> getMarketplaceProductsByCategory(@PathVariable Long categoryId) {
+        log.info("Getting marketplace products by category: {}", categoryId);
+
+        List<ProductDTO> products = productService.getProductsByCategoryId(categoryId).stream()
+                .filter(product -> product.getQuantity() > 0)
+                .map(productMapper::toDTO)
+                .collect(Collectors.toList());
+
+        return ResponseEntity.ok(products);
+    }
+
+    @GetMapping("/marketplace/by-tag/{tagId}")
+    public ResponseEntity<List<ProductDTO>> getMarketplaceProductsByTag(@PathVariable Long tagId) {
+        log.info("Getting marketplace products by tag: {}", tagId);
+
+        List<ProductDTO> products = productService.getProductsByTagId(tagId).stream()
+                .filter(product -> product.getQuantity() > 0)
+                .map(productMapper::toDTO)
+                .collect(Collectors.toList());
+
+        return ResponseEntity.ok(products);
+    }
 }

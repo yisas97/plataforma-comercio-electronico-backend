@@ -279,4 +279,10 @@ public class ProductService implements IProductService
 
         return false;
     }
+
+    @Override
+    public List<Product> getProductsByCategoryId(Long categoryId) {
+        return productRepository.findByCategoryId(categoryId);
+    }
+
 }

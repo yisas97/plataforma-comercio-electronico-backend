@@ -31,4 +31,6 @@ public interface IProductService
 
     boolean addTagToProduct(Long productId, Long tagId, Long producerId);
     boolean removeTagFromProduct(Long productId, Long tagId, Long producerId);
+
+    List<Product> getProductsByCategoryId(Long categoryId);
 }
