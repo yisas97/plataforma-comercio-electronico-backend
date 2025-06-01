@@ -159,4 +159,24 @@ public class OrderController {
         List<OrderDTO> orders = orderService.getAllOrders();
         return ResponseEntity.ok(orders);
     }
+
+    @PutMapping("/{orderId}/confirm-delivery")
+    public ResponseEntity<OrderDTO> confirmDelivery(
+            @PathVariable Long orderId,
+            HttpServletRequest request) {
+
+        Long userId = tokenUtils.getUserIdFromRequest(request);
+        if (userId == null) {
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build();
+        }
+
+        try {
+            Optional<OrderDTO> deliveredOrder = orderService.confirmDelivery(orderId, userId);
+            return deliveredOrder.map(ResponseEntity::ok)
+                    .orElse(ResponseEntity.notFound().build());
+        } catch (IllegalArgumentException e) {
+            log.error("Error confirming delivery: {}", e.getMessage());
+            return ResponseEntity.badRequest().build();
+        }
+    }
 }

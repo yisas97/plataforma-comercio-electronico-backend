@@ -36,4 +36,6 @@ public interface IOrderService {
     ProducerSalesStatsDTO getProducerSalesStats(Long producerId);
 
     List<OrderDTO> getTodayOrdersByProducerId(Long producerId);
+
+    Optional<OrderDTO> confirmDelivery(Long orderId, Long userId);
 }

@@ -163,7 +163,7 @@ public class ProducerOrderController {
         ProducerSalesStatsDTO stats = orderService.getProducerSalesStats(producerId);
         return ResponseEntity.ok(stats);
     }
-    
+
     @GetMapping("/daily-summary")
     public ResponseEntity<List<OrderDTO>> getDailyOrdersSummary(HttpServletRequest request) {
         Long producerId = tokenUtils.getProducerIdFromRequest(request);

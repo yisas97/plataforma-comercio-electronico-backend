@@ -420,4 +420,33 @@ public class OrderService implements IOrderService {
         }
     }
 
+    @Override
+    @Transactional
+    public Optional<OrderDTO> confirmDelivery(Long orderId, Long userId) {
+        log.info("User {} confirming delivery for order {}", userId, orderId);
+
+        Optional<Order> orderOpt = orderRepository.findById(orderId);
+
+        if (orderOpt.isEmpty()) {
+            return Optional.empty();
+        }
+
+        Order order = orderOpt.get();
+
+        if (!order.getUser().getId().equals(userId)) {
+            throw new IllegalArgumentException("Este pedido no pertenece al usuario");
+        }
+
+        // Solo se puede confirmar entrega si está en estado SHIPPED
+        if (order.getStatus() != OrderStatus.SHIPPED) {
+            throw new IllegalArgumentException("Solo se puede confirmar entrega de pedidos enviados. Estado actual: " + order.getStatus());
+        }
+
+        order.setStatus(OrderStatus.DELIVERED);
+        order.setUpdatedAt(LocalDateTime.now());
+
+        Order updatedOrder = orderRepository.save(order);
+        return Optional.of(orderMapper.toDTO(updatedOrder));
+    }
+
 }
