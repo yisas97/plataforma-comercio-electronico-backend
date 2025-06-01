@@ -48,6 +48,7 @@ public class Product
     private String sku;
     private LocalDateTime createdAt;
     private LocalDateTime updatedAt;
+    private String image;
 
     @ManyToOne
     @JoinColumn(name = "producer_id", nullable = false)

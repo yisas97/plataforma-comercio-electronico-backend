@@ -4,6 +4,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import pe.com.prueba.plataformacontrolcomercio.dto.ProductDTO;
+import pe.com.prueba.plataformacontrolcomercio.dto.producer.ProducerMarketplaceDTO;
 import pe.com.prueba.plataformacontrolcomercio.mapper.ProductMapper;
 import pe.com.prueba.plataformacontrolcomercio.model.Category;
 import pe.com.prueba.plataformacontrolcomercio.model.Producer;
@@ -283,6 +284,21 @@ public class ProductService implements IProductService
     @Override
     public List<Product> getProductsByCategoryId(Long categoryId) {
         return productRepository.findByCategoryId(categoryId);
+    }
+
+    @Override
+    public List<ProducerMarketplaceDTO> getApprovedProducersWithStock() {
+        return productRepository.findApprovedProducersWithStock();
+    }
+
+    @Override
+    public List<Product> getProductsByProducerIdForMarketplace(Long producerId) {
+        return productRepository.findByProducerIdAndProducerApprovedTrue(producerId);
+    }
+
+    @Override
+    public List<Product> searchProductsByProducerName(String producerName) {
+        return productRepository.findByProducerBusinessNameContainingIgnoreCaseAndProducerApprovedTrue(producerName);
     }
 
 }

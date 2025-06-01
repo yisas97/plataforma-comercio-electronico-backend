@@ -1,6 +1,7 @@
 package pe.com.prueba.plataformacontrolcomercio.service;
 
 import pe.com.prueba.plataformacontrolcomercio.dto.ProductDTO;
+import pe.com.prueba.plataformacontrolcomercio.dto.producer.ProducerMarketplaceDTO;
 import pe.com.prueba.plataformacontrolcomercio.model.Product;
 
 import java.util.List;
@@ -33,4 +34,10 @@ public interface IProductService
     boolean removeTagFromProduct(Long productId, Long tagId, Long producerId);
 
     List<Product> getProductsByCategoryId(Long categoryId);
+
+    List<ProducerMarketplaceDTO> getApprovedProducersWithStock();
+
+    List<Product> getProductsByProducerIdForMarketplace(Long producerId);
+
+    List<Product> searchProductsByProducerName(String producerName);
 }

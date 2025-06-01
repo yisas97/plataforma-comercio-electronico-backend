@@ -16,6 +16,7 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 import pe.com.prueba.plataformacontrolcomercio.dto.ProductDTO;
+import pe.com.prueba.plataformacontrolcomercio.dto.producer.ProducerMarketplaceDTO;
 import pe.com.prueba.plataformacontrolcomercio.mapper.ProductMapper;
 import pe.com.prueba.plataformacontrolcomercio.model.Product;
 import pe.com.prueba.plataformacontrolcomercio.service.IProductService;
@@ -344,6 +345,40 @@ public class ProductController {
         log.info("Getting marketplace products by tag: {}", tagId);
 
         List<ProductDTO> products = productService.getProductsByTagId(tagId).stream()
+                .filter(product -> product.getQuantity() > 0)
+                .map(productMapper::toDTO)
+                .collect(Collectors.toList());
+
+        return ResponseEntity.ok(products);
+    }
+
+    @GetMapping("/marketplace/producers")
+    public ResponseEntity<List<ProducerMarketplaceDTO>> getMarketplaceProducers() {
+        log.info("Getting all approved producers for marketplace");
+        List<ProducerMarketplaceDTO> producers = productService.getApprovedProducersWithStock();
+
+        log.info("Found {} approved producers with stock for marketplace", producers.size());
+        return ResponseEntity.ok(producers);
+    }
+
+    @GetMapping("/marketplace/producers/{producerId}/products")
+    public ResponseEntity<List<ProductDTO>> getProductsByProducerForMarketplace(@PathVariable Long producerId) {
+        log.info("Getting products for producer {} in marketplace", producerId);
+
+        List<ProductDTO> products = productService.getProductsByProducerIdForMarketplace(producerId).stream()
+                .filter(product -> product.getQuantity() > 0) // Solo productos con stock
+                .map(productMapper::toDTO)
+                .collect(Collectors.toList());
+
+        log.info("Found {} products for producer {} in marketplace", products.size(), producerId);
+        return ResponseEntity.ok(products);
+    }
+
+    @GetMapping("/marketplace/search/producer")
+    public ResponseEntity<List<ProductDTO>> searchProductsByProducerName(@RequestParam String producerName) {
+        log.info("Searching products by producer name: {}", producerName);
+
+        List<ProductDTO> products = productService.searchProductsByProducerName(producerName).stream()
                 .filter(product -> product.getQuantity() > 0)
                 .map(productMapper::toDTO)
                 .collect(Collectors.toList());

@@ -4,6 +4,7 @@ import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
+import pe.com.prueba.plataformacontrolcomercio.dto.producer.ProducerMarketplaceDTO;
 import pe.com.prueba.plataformacontrolcomercio.model.Producer;
 import pe.com.prueba.plataformacontrolcomercio.model.Product;
 
@@ -39,4 +40,22 @@ public interface ProductRepository extends JpaRepository<Product, Long>
             @Param("categoryIds") List<Long> categoryIds,
             @Param("tagIds") List<Long> tagIds,
             @Param("producerId") Long producerId);
+
+    @Query("SELECT new pe.com.prueba.plataformacontrolcomercio.dto.producer.ProducerMarketplaceDTO(" +
+            "p.producer.id, p.producer.businessName, p.producer.description, " +
+            "p.producer.location, p.producer.phone, COUNT(p)) " +
+            "FROM Product p " +
+            "WHERE p.producer.approved = true AND p.quantity > 0 " +
+            "GROUP BY p.producer.id, p.producer.businessName, p.producer.description, " +
+            "p.producer.location, p.producer.phone " +
+            "ORDER BY p.producer.businessName")
+    List<ProducerMarketplaceDTO> findApprovedProducersWithStock();
+
+    @Query("SELECT p FROM Product p WHERE p.producer.id = :producerId AND p.producer.approved = true")
+    List<Product> findByProducerIdAndProducerApprovedTrue(Long producerId);
+
+    @Query("SELECT p FROM Product p WHERE " +
+            "LOWER(p.producer.businessName) LIKE LOWER(CONCAT('%', :producerName, '%')) " +
+            "AND p.producer.approved = true")
+    List<Product> findByProducerBusinessNameContainingIgnoreCaseAndProducerApprovedTrue(@Param("producerName") String producerName);
 }
