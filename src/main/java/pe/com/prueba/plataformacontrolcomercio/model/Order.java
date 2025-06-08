@@ -29,8 +29,9 @@ import java.util.List;
 @NoArgsConstructor
 @AllArgsConstructor
 @EqualsAndHashCode(of = "id")
-@ToString(exclude = {"user", "orderItems"})
-public class Order {
+@ToString(exclude = { "user", "orderItems" })
+public class Order
+{
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
@@ -39,7 +40,7 @@ public class Order {
     @NotNull
     @ManyToOne
     @JoinColumn(name = "user_id", nullable = false)
-    @JsonIgnoreProperties({"password", "producer"})
+    @JsonIgnoreProperties({ "password", "producer" })
     private User user;
 
     @NotNull
@@ -58,7 +59,8 @@ public class Order {
     @OneToMany(mappedBy = "order", cascade = CascadeType.ALL, orphanRemoval = true)
     private List<OrderItem> orderItems = new ArrayList<>();
 
-    public void calculateTotal() {
+    public void calculateTotal()
+    {
         this.totalAmount = orderItems.stream()
                 .mapToDouble(item -> item.getPrice() * item.getQuantity())
                 .sum();

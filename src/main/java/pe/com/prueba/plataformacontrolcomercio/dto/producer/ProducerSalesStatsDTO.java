@@ -9,7 +9,8 @@ import java.time.LocalDateTime;
 @Data
 @NoArgsConstructor
 @AllArgsConstructor
-public class ProducerSalesStatsDTO {
+public class ProducerSalesStatsDTO
+{
 
     private Long totalOrders;
     private Double totalRevenue;
@@ -36,9 +37,9 @@ public class ProducerSalesStatsDTO {
     private LocalDateTime statsGeneratedAt;
 
     public ProducerSalesStatsDTO(Long totalOrders, Double totalRevenue,
-            Long pendingOrders, Long confirmedOrders,
-            Long preparingOrders, Long shippedOrders,
-            Long deliveredOrders, Long cancelledOrders) {
+            Long pendingOrders, Long confirmedOrders, Long preparingOrders,
+            Long shippedOrders, Long deliveredOrders, Long cancelledOrders)
+    {
         this.totalOrders = totalOrders;
         this.totalRevenue = totalRevenue != null ? totalRevenue : 0.0;
         this.pendingOrders = pendingOrders;
@@ -47,7 +48,9 @@ public class ProducerSalesStatsDTO {
         this.shippedOrders = shippedOrders;
         this.deliveredOrders = deliveredOrders;
         this.cancelledOrders = cancelledOrders;
-        this.averageOrderValue = totalOrders > 0 ? this.totalRevenue / totalOrders : 0.0;
+        this.averageOrderValue = totalOrders > 0 ?
+                this.totalRevenue / totalOrders :
+                0.0;
         this.statsGeneratedAt = LocalDateTime.now();
     }
 }

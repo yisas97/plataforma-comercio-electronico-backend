@@ -10,7 +10,8 @@ import java.util.stream.Collectors;
 
 @Data
 @NoArgsConstructor
-public class ProductDTO {
+public class ProductDTO
+{
     private Long id;
     private String name;
     private Double price;
@@ -33,7 +34,8 @@ public class ProductDTO {
     private String producerName;
     private String producerLocation;
 
-    public ProductDTO(Product product) {
+    public ProductDTO(Product product)
+    {
         this.id = product.getId();
         this.name = product.getName();
         this.price = product.getPrice();
@@ -47,9 +49,12 @@ public class ProductDTO {
         this.active = true;
         this.inventoryStatus = getInventoryStatus(product.getQuantity());
         this.rating = 4.5;
-        this.image = product.getImage() != null ? product.getImage() : "product-placeholder.jpg";
+        this.image = product.getImage() != null ?
+                product.getImage() :
+                "product-placeholder.jpg";
 
-        if (product.getProducer() != null) {
+        if (product.getProducer() != null)
+        {
             this.producerId = product.getProducer().getId();
             this.producerName = product.getProducer().getBusinessName();
             this.producerLocation = product.getProducer().getLocation();
@@ -59,22 +64,23 @@ public class ProductDTO {
                 .map(pc -> pc.getCategory().getId())
                 .collect(Collectors.toSet());
 
-        this.category = product.getProductCategories().stream()
-                .findFirst()
-                .map(pc -> pc.getCategory().getName())
-                .orElse("Sin categoría");
+        this.category = product.getProductCategories().stream().findFirst()
+                .map(pc -> pc.getCategory().getName()).orElse("Sin categoría");
 
         this.tagIds = product.getProductTags().stream()
-                .map(pt -> pt.getTag().getId())
-                .collect(Collectors.toSet());
+                .map(pt -> pt.getTag().getId()).collect(Collectors.toSet());
     }
 
-    private String getInventoryStatus(Integer quantity) {
-        if (quantity == null || quantity == 0) {
+    private String getInventoryStatus(Integer quantity)
+    {
+        if (quantity == null || quantity == 0)
+        {
             return "AGOTADO";
-        } else if (quantity < 10) {
+        } else if (quantity < 10)
+        {
             return "BAJO STOCK";
-        } else {
+        } else
+        {
             return "EN STOCK";
         }
     }

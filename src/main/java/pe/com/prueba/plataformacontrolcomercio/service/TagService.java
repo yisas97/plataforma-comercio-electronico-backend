@@ -10,39 +10,48 @@ import java.util.List;
 import java.util.Optional;
 
 @Service
-public class TagService implements ITagService {
+public class TagService implements ITagService
+{
 
     private final TagRepository tagRepository;
 
     @Autowired
-    public TagService(TagRepository tagRepository) {
+    public TagService(TagRepository tagRepository)
+    {
         this.tagRepository = tagRepository;
     }
 
     @Override
-    public List<Tag> getAllTags() {
+    public List<Tag> getAllTags()
+    {
         return tagRepository.findAll();
     }
 
     @Override
-    public Optional<Tag> getTagById(Long id) {
+    public Optional<Tag> getTagById(Long id)
+    {
         return tagRepository.findById(id);
     }
 
     @Override
-    public Optional<Tag> getTagByName(String name) {
+    public Optional<Tag> getTagByName(String name)
+    {
         return tagRepository.findByName(name);
     }
 
     @Override
-    public List<Tag> searchTagsByName(String name) {
+    public List<Tag> searchTagsByName(String name)
+    {
         return tagRepository.findByNameContainingIgnoreCase(name);
     }
 
     @Override
-    public Tag createTag(Tag tag) {
-        if (tagRepository.findByName(tag.getName()).isPresent()) {
-            throw new IllegalArgumentException("Ya existe una etiqueta con el nombre: " + tag.getName());
+    public Tag createTag(Tag tag)
+    {
+        if (tagRepository.findByName(tag.getName()).isPresent())
+        {
+            throw new IllegalArgumentException(
+                    "Ya existe una etiqueta con el nombre: " + tag.getName());
         }
 
         tag.setCreatedAt(LocalDateTime.now());
@@ -51,12 +60,16 @@ public class TagService implements ITagService {
     }
 
     @Override
-    public Optional<Tag> updateTag(Long id, Tag tagDetails) {
+    public Optional<Tag> updateTag(Long id, Tag tagDetails)
+    {
         return tagRepository.findById(id).map(existingTag -> {
             // Verificar si el nuevo nombre ya existe en otra etiqueta
-            if (!existingTag.getName().equals(tagDetails.getName()) &&
-                    tagRepository.findByName(tagDetails.getName()).isPresent()) {
-                throw new IllegalArgumentException("Ya existe una etiqueta con el nombre: " + tagDetails.getName());
+            if (!existingTag.getName()
+                    .equals(tagDetails.getName()) && tagRepository.findByName(
+                    tagDetails.getName()).isPresent())
+            {
+                throw new IllegalArgumentException(
+                        "Ya existe una etiqueta con el nombre: " + tagDetails.getName());
             }
 
             existingTag.setName(tagDetails.getName());
@@ -66,7 +79,8 @@ public class TagService implements ITagService {
     }
 
     @Override
-    public boolean deleteTag(Long id) {
+    public boolean deleteTag(Long id)
+    {
         return tagRepository.findById(id).map(tag -> {
             tagRepository.delete(tag);
             return true;

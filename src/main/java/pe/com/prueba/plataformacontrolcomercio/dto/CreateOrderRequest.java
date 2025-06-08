@@ -7,7 +7,8 @@ import lombok.Data;
 import java.util.List;
 
 @Data
-public class CreateOrderRequest {
+public class CreateOrderRequest
+{
     @NotBlank(message = "Dirección de envío es obligatoria")
     private String shippingAddress;
 

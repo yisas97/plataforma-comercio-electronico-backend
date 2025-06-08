@@ -1,9 +1,7 @@
 package pe.com.prueba.plataformacontrolcomercio.model;
 
-import com.fasterxml.jackson.annotation.JsonBackReference;
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
-import com.fasterxml.jackson.annotation.JsonManagedReference;
 import jakarta.persistence.Entity;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
@@ -28,8 +26,9 @@ import java.util.Objects;
 @Data
 @NoArgsConstructor
 @AllArgsConstructor
-@ToString(exclude = {"user", "products"})
-public class Producer {
+@ToString(exclude = { "user", "products" })
+public class Producer
+{
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
@@ -55,7 +54,8 @@ public class Producer {
 
     @OneToOne
     @JoinColumn(name = "user_id", nullable = false)
-    @JsonIgnoreProperties({"producer", "password", "createdAt", "updatedAt", "verified"})
+    @JsonIgnoreProperties({ "producer", "password", "createdAt", "updatedAt",
+            "verified" })
     private User user;
 
     @OneToMany(mappedBy = "producer")
@@ -63,15 +63,19 @@ public class Producer {
     private List<Product> products;
 
     @Override
-    public boolean equals(Object o) {
-        if (this == o) return true;
-        if (o == null || getClass() != o.getClass()) return false;
+    public boolean equals(Object o)
+    {
+        if (this == o)
+            return true;
+        if (o == null || getClass() != o.getClass())
+            return false;
         Producer producer = (Producer) o;
         return Objects.equals(id, producer.id);
     }
 
     @Override
-    public int hashCode() {
+    public int hashCode()
+    {
         return Objects.hashCode(id);
     }
 }

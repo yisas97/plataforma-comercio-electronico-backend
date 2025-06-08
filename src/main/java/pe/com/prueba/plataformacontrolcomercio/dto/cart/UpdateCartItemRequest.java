@@ -5,7 +5,8 @@ import jakarta.validation.constraints.Positive;
 import lombok.Data;
 
 @Data
-public class UpdateCartItemRequest {
+public class UpdateCartItemRequest
+{
     @NotNull(message = "Cantidad es obligatoria")
     @Positive(message = "Cantidad debe ser positiva")
     private Integer quantity;

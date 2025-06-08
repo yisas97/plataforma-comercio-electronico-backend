@@ -26,7 +26,8 @@ import java.util.Set;
 @NoArgsConstructor
 @AllArgsConstructor
 @EqualsAndHashCode(of = "id")
-public class Tag {
+public class Tag
+{
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
@@ -44,9 +45,9 @@ public class Tag {
     @JsonIgnore
     private Set<ProductTag> productTags = new HashSet<>();
 
-    public Set<Long> getProductIds() {
-        return productTags.stream()
-                .map(pt -> pt.getProduct().getId())
+    public Set<Long> getProductIds()
+    {
+        return productTags.stream().map(pt -> pt.getProduct().getId())
                 .collect(java.util.stream.Collectors.toSet());
     }
 }

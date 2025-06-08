@@ -9,10 +9,13 @@ import pe.com.prueba.plataformacontrolcomercio.model.OrderItem;
 import java.util.stream.Collectors;
 
 @Component
-public class OrderMapper {
+public class OrderMapper
+{
 
-    public OrderDTO toDTO(Order order) {
-        if (order == null) {
+    public OrderDTO toDTO(Order order)
+    {
+        if (order == null)
+        {
             return null;
         }
 
@@ -26,23 +29,27 @@ public class OrderMapper {
         dto.setCreatedAt(order.getCreatedAt());
         dto.setUpdatedAt(order.getUpdatedAt());
 
-        if (order.getUser() != null) {
+        if (order.getUser() != null)
+        {
             dto.setUserId(order.getUser().getId());
             dto.setUserName(order.getUser().getName());
             dto.setUserEmail(order.getUser().getEmail());
         }
 
-        if (order.getOrderItems() != null) {
-            dto.setOrderItems(order.getOrderItems().stream()
-                    .map(this::toOrderItemDTO)
-                    .collect(Collectors.toList()));
+        if (order.getOrderItems() != null)
+        {
+            dto.setOrderItems(
+                    order.getOrderItems().stream().map(this::toOrderItemDTO)
+                            .collect(Collectors.toList()));
         }
 
         return dto;
     }
 
-    public OrderItemDTO toOrderItemDTO(OrderItem orderItem) {
-        if (orderItem == null) {
+    public OrderItemDTO toOrderItemDTO(OrderItem orderItem)
+    {
+        if (orderItem == null)
+        {
             return null;
         }
 
@@ -52,7 +59,8 @@ public class OrderMapper {
         dto.setPrice(orderItem.getPrice());
         dto.setSubtotal(orderItem.getSubtotal());
 
-        if (orderItem.getProduct() != null) {
+        if (orderItem.getProduct() != null)
+        {
             dto.setProductId(orderItem.getProduct().getId());
             dto.setProductName(orderItem.getProduct().getName());
             // Si tienes campo image en Product, descomenta la siguiente línea:
@@ -62,8 +70,10 @@ public class OrderMapper {
         return dto;
     }
 
-    public Order toEntity(OrderDTO dto) {
-        if (dto == null) {
+    public Order toEntity(OrderDTO dto)
+    {
+        if (dto == null)
+        {
             return null;
         }
 

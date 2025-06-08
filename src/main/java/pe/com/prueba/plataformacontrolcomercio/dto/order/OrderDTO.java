@@ -11,7 +11,8 @@ import java.util.stream.Collectors;
 
 @Data
 @NoArgsConstructor
-public class OrderDTO {
+public class OrderDTO
+{
     private Long id;
     private Long userId;
     private String userName;
@@ -25,7 +26,8 @@ public class OrderDTO {
     private LocalDateTime updatedAt;
     private List<OrderItemDTO> orderItems;
 
-    public OrderDTO(Order order) {
+    public OrderDTO(Order order)
+    {
         this.id = order.getId();
         this.totalAmount = order.getTotalAmount();
         this.status = order.getStatus();
@@ -35,14 +37,14 @@ public class OrderDTO {
         this.createdAt = order.getCreatedAt();
         this.updatedAt = order.getUpdatedAt();
 
-        if (order.getUser() != null) {
+        if (order.getUser() != null)
+        {
             this.userId = order.getUser().getId();
             this.userName = order.getUser().getName();
             this.userEmail = order.getUser().getEmail();
         }
 
-        this.orderItems = order.getOrderItems().stream()
-                .map(OrderItemDTO::new)
+        this.orderItems = order.getOrderItems().stream().map(OrderItemDTO::new)
                 .collect(Collectors.toList());
     }
 }

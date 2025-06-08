@@ -10,6 +10,7 @@ public interface IProducerService
     public List<Producer> getAllProducers();
 
     public Optional<Producer> getProducerById(Long id);
+
     public Optional<Producer> findByUserId(Long userId);
 
     public Producer saveProducer(Producer producer);

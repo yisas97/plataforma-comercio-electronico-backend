@@ -9,7 +9,8 @@ import pe.com.prueba.plataformacontrolcomercio.model.OrderStatus;
 import java.util.List;
 import java.util.Optional;
 
-public interface IOrderService {
+public interface IOrderService
+{
 
     OrderDTO createOrder(Long userId, CreateOrderRequest createOrderRequest);
 
@@ -23,15 +24,18 @@ public interface IOrderService {
 
     List<OrderDTO> getOrdersByProducerId(Long producerId);
 
-    Optional<OrderDTO> updateOrderStatus(Long orderId, OrderStatus status, Long producerId);
+    Optional<OrderDTO> updateOrderStatus(Long orderId, OrderStatus status,
+            Long producerId);
 
     List<OrderDTO> getAllOrders();
 
     List<OrderDTO> getOrdersByStatus(OrderStatus status);
 
-    List<OrderDTO> getOrdersByProducerIdAndStatus(Long producerId, OrderStatus status);
+    List<OrderDTO> getOrdersByProducerIdAndStatus(Long producerId,
+            OrderStatus status);
 
-    Optional<OrderDTO> updateOrderStatusByProducer(Long orderId, OrderStatus status, Long producerId);
+    Optional<OrderDTO> updateOrderStatusByProducer(Long orderId,
+            OrderStatus status, Long producerId);
 
     ProducerSalesStatsDTO getProducerSalesStats(Long producerId);
 

@@ -25,20 +25,26 @@ import java.util.Optional;
 @RestController
 @RequestMapping("/api/categories")
 @Slf4j
-public class CategoryController {
+public class CategoryController
+{
 
     private final ICategoryService categoryService;
     private final TokenUtils tokenUtils;
 
     @Autowired
-    public CategoryController(ICategoryService categoryService, TokenUtils tokenUtils) {
+    public CategoryController(ICategoryService categoryService,
+            TokenUtils tokenUtils)
+    {
         this.categoryService = categoryService;
         this.tokenUtils = tokenUtils;
     }
 
     @GetMapping
-    public ResponseEntity<List<Category>> getAllCategories(HttpServletRequest request) {
-        if (tokenUtils.getUserIdFromRequest(request) == null) {
+    public ResponseEntity<List<Category>> getAllCategories(
+            HttpServletRequest request)
+    {
+        if (tokenUtils.getUserIdFromRequest(request) == null)
+        {
             return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build();
         }
 
@@ -46,8 +52,11 @@ public class CategoryController {
     }
 
     @GetMapping("/{id}")
-    public ResponseEntity<Category> getCategoryById(@PathVariable Long id, HttpServletRequest request) {
-        if (tokenUtils.getUserIdFromRequest(request) == null) {
+    public ResponseEntity<Category> getCategoryById(@PathVariable Long id,
+            HttpServletRequest request)
+    {
+        if (tokenUtils.getUserIdFromRequest(request) == null)
+        {
             return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build();
         }
 
@@ -57,8 +66,11 @@ public class CategoryController {
     }
 
     @GetMapping("/search")
-    public ResponseEntity<List<Category>> searchCategories(@RequestParam String name, HttpServletRequest request) {
-        if (tokenUtils.getUserIdFromRequest(request) == null) {
+    public ResponseEntity<List<Category>> searchCategories(
+            @RequestParam String name, HttpServletRequest request)
+    {
+        if (tokenUtils.getUserIdFromRequest(request) == null)
+        {
             return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build();
         }
 
@@ -66,53 +78,65 @@ public class CategoryController {
     }
 
     @PostMapping
-    public ResponseEntity<Category> createCategory(@Valid @RequestBody Category category, HttpServletRequest request) {
+    public ResponseEntity<Category> createCategory(
+            @Valid @RequestBody Category category, HttpServletRequest request)
+    {
         String role = tokenUtils.getRoleFromRequest(request);
-        if (!"ROLE_ADMIN".equals(role)) {
+        if (!"ROLE_ADMIN".equals(role))
+        {
             return ResponseEntity.status(HttpStatus.FORBIDDEN).build();
         }
 
-        try {
+        try
+        {
             Category newCategory = categoryService.createCategory(category);
             return ResponseEntity.status(HttpStatus.CREATED).body(newCategory);
-        } catch (IllegalArgumentException e) {
+        } catch (IllegalArgumentException e)
+        {
             return ResponseEntity.badRequest().build();
         }
     }
 
     @PutMapping("/{id}")
-    public ResponseEntity<Category> updateCategory(
-            @PathVariable Long id,
-            @Valid @RequestBody Category category,
-            HttpServletRequest request) {
+    public ResponseEntity<Category> updateCategory(@PathVariable Long id,
+            @Valid @RequestBody Category category, HttpServletRequest request)
+    {
 
         String role = tokenUtils.getRoleFromRequest(request);
-        if (!"ROLE_ADMIN".equals(role)) {
+        if (!"ROLE_ADMIN".equals(role))
+        {
             return ResponseEntity.status(HttpStatus.FORBIDDEN).build();
         }
 
-        try {
+        try
+        {
             return categoryService.updateCategory(id, category)
                     .map(ResponseEntity::ok)
                     .orElse(ResponseEntity.notFound().build());
-        } catch (IllegalArgumentException e) {
+        } catch (IllegalArgumentException e)
+        {
             return ResponseEntity.badRequest().build();
         }
     }
 
     @DeleteMapping("/{id}")
-    public ResponseEntity<Void> deleteCategory(@PathVariable Long id, HttpServletRequest request) {
+    public ResponseEntity<Void> deleteCategory(@PathVariable Long id,
+            HttpServletRequest request)
+    {
 
         String role = tokenUtils.getRoleFromRequest(request);
-        if (!"ROLE_ADMIN".equals(role)) {
+        if (!"ROLE_ADMIN".equals(role))
+        {
             return ResponseEntity.status(HttpStatus.FORBIDDEN).build();
         }
 
-        try {
-            return categoryService.deleteCategory(id)
-                    ? ResponseEntity.noContent().build()
-                    : ResponseEntity.notFound().build();
-        } catch (IllegalArgumentException e) {
+        try
+        {
+            return categoryService.deleteCategory(id) ?
+                    ResponseEntity.noContent().build() :
+                    ResponseEntity.notFound().build();
+        } catch (IllegalArgumentException e)
+        {
             return ResponseEntity.badRequest().build();
         }
     }

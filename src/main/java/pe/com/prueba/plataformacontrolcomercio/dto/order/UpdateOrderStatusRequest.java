@@ -5,7 +5,8 @@ import lombok.Data;
 import pe.com.prueba.plataformacontrolcomercio.model.OrderStatus;
 
 @Data
-public class UpdateOrderStatusRequest {
+public class UpdateOrderStatusRequest
+{
     @NotBlank(message = "Estado es obligatorio")
     private OrderStatus status;
 }

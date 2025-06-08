@@ -10,39 +10,48 @@ import java.util.List;
 import java.util.Optional;
 
 @Service
-public class CategoryService implements ICategoryService {
+public class CategoryService implements ICategoryService
+{
 
     private final CategoryRepository categoryRepository;
 
     @Autowired
-    public CategoryService(CategoryRepository categoryRepository) {
+    public CategoryService(CategoryRepository categoryRepository)
+    {
         this.categoryRepository = categoryRepository;
     }
 
     @Override
-    public List<Category> getAllCategories() {
+    public List<Category> getAllCategories()
+    {
         return categoryRepository.findAll();
     }
 
     @Override
-    public Optional<Category> getCategoryById(Long id) {
+    public Optional<Category> getCategoryById(Long id)
+    {
         return categoryRepository.findById(id);
     }
 
     @Override
-    public Optional<Category> getCategoryByName(String name) {
+    public Optional<Category> getCategoryByName(String name)
+    {
         return categoryRepository.findByName(name);
     }
 
     @Override
-    public List<Category> searchCategoriesByName(String name) {
+    public List<Category> searchCategoriesByName(String name)
+    {
         return categoryRepository.findByNameContainingIgnoreCase(name);
     }
 
     @Override
-    public Category createCategory(Category category) {
-        if (categoryRepository.findByName(category.getName()).isPresent()) {
-            throw new IllegalArgumentException("Ya existe una categoría con el nombre: " + category.getName());
+    public Category createCategory(Category category)
+    {
+        if (categoryRepository.findByName(category.getName()).isPresent())
+        {
+            throw new IllegalArgumentException(
+                    "Ya existe una categoría con el nombre: " + category.getName());
         }
 
         category.setCreatedAt(LocalDateTime.now());
@@ -51,12 +60,16 @@ public class CategoryService implements ICategoryService {
     }
 
     @Override
-    public Optional<Category> updateCategory(Long id, Category categoryDetails) {
+    public Optional<Category> updateCategory(Long id, Category categoryDetails)
+    {
         return categoryRepository.findById(id).map(existingCategory -> {
             // Verificar si el nuevo nombre ya existe en otra categoría
-            if (!existingCategory.getName().equals(categoryDetails.getName()) &&
-                    categoryRepository.findByName(categoryDetails.getName()).isPresent()) {
-                throw new IllegalArgumentException("Ya existe una categoría con el nombre: " + categoryDetails.getName());
+            if (!existingCategory.getName()
+                    .equals(categoryDetails.getName()) && categoryRepository.findByName(
+                    categoryDetails.getName()).isPresent())
+            {
+                throw new IllegalArgumentException(
+                        "Ya existe una categoría con el nombre: " + categoryDetails.getName());
             }
             existingCategory.setActive(categoryDetails.getActive());
             existingCategory.setName(categoryDetails.getName());
@@ -67,7 +80,8 @@ public class CategoryService implements ICategoryService {
     }
 
     @Override
-    public boolean deleteCategory(Long id) {
+    public boolean deleteCategory(Long id)
+    {
         return categoryRepository.findById(id).map(category -> {
             categoryRepository.delete(category);
             return true;

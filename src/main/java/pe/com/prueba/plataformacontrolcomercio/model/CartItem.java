@@ -23,7 +23,8 @@ import java.time.LocalDateTime;
 @NoArgsConstructor
 @AllArgsConstructor
 @EqualsAndHashCode(of = "id")
-public class CartItem {
+public class CartItem
+{
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
@@ -31,12 +32,12 @@ public class CartItem {
 
     @ManyToOne
     @JoinColumn(name = "user_id", nullable = false)
-    @JsonIgnoreProperties({"password", "producer"})
+    @JsonIgnoreProperties({ "password", "producer" })
     private User user;
 
     @ManyToOne
     @JoinColumn(name = "product_id", nullable = false)
-    @JsonIgnoreProperties({"producer", "productCategories", "productTags"})
+    @JsonIgnoreProperties({ "producer", "productCategories", "productTags" })
     private Product product;
 
     @NotNull
@@ -47,7 +48,8 @@ public class CartItem {
     private LocalDateTime updatedAt;
 
     // Método para calcular subtotal
-    public Double getSubtotal() {
+    public Double getSubtotal()
+    {
         return product.getPrice() * quantity;
     }
 }

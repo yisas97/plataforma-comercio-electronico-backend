@@ -26,13 +26,15 @@ import java.util.Optional;
 @RestController
 @RequestMapping("/api/orders")
 @Slf4j
-public class OrderController {
+public class OrderController
+{
 
     private final IOrderService orderService;
     private final TokenUtils tokenUtils;
 
     @Autowired
-    public OrderController(IOrderService orderService, TokenUtils tokenUtils) {
+    public OrderController(IOrderService orderService, TokenUtils tokenUtils)
+    {
         this.orderService = orderService;
         this.tokenUtils = tokenUtils;
     }
@@ -40,29 +42,39 @@ public class OrderController {
     @PostMapping
     public ResponseEntity<OrderDTO> createOrder(
             @Valid @RequestBody CreateOrderRequest createOrderRequest,
-            HttpServletRequest request) {
+            HttpServletRequest request)
+    {
 
         Long userId = tokenUtils.getUserIdFromRequest(request);
-        if (userId == null) {
+        if (userId == null)
+        {
             return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build();
         }
 
-        try {
-            OrderDTO createdOrder = orderService.createOrder(userId, createOrderRequest);
+        try
+        {
+            OrderDTO createdOrder = orderService.createOrder(userId,
+                    createOrderRequest);
             return ResponseEntity.status(HttpStatus.CREATED).body(createdOrder);
-        } catch (IllegalArgumentException e) {
+        } catch (IllegalArgumentException e)
+        {
             log.error("Error creating order: {}", e.getMessage());
             return ResponseEntity.badRequest().build();
-        } catch (Exception e) {
+        } catch (Exception e)
+        {
             log.error("Unexpected error creating order", e);
-            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build();
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                    .build();
         }
     }
 
     @GetMapping("/my-orders")
-    public ResponseEntity<List<OrderDTO>> getMyOrders(HttpServletRequest request) {
+    public ResponseEntity<List<OrderDTO>> getMyOrders(
+            HttpServletRequest request)
+    {
         Long userId = tokenUtils.getUserIdFromRequest(request);
-        if (userId == null) {
+        if (userId == null)
+        {
             return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build();
         }
 
@@ -71,44 +83,53 @@ public class OrderController {
     }
 
     @GetMapping("/{orderId}")
-    public ResponseEntity<OrderDTO> getOrderById(
-            @PathVariable Long orderId,
-            HttpServletRequest request) {
+    public ResponseEntity<OrderDTO> getOrderById(@PathVariable Long orderId,
+            HttpServletRequest request)
+    {
 
         Long userId = tokenUtils.getUserIdFromRequest(request);
-        if (userId == null) {
+        if (userId == null)
+        {
             return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build();
         }
 
-        Optional<OrderDTO> order = orderService.getOrderByIdAndUserId(orderId, userId);
+        Optional<OrderDTO> order = orderService.getOrderByIdAndUserId(orderId,
+                userId);
         return order.map(ResponseEntity::ok)
                 .orElse(ResponseEntity.notFound().build());
     }
 
     @PutMapping("/{orderId}/cancel")
-    public ResponseEntity<OrderDTO> cancelOrder(
-            @PathVariable Long orderId,
-            HttpServletRequest request) {
+    public ResponseEntity<OrderDTO> cancelOrder(@PathVariable Long orderId,
+            HttpServletRequest request)
+    {
 
         Long userId = tokenUtils.getUserIdFromRequest(request);
-        if (userId == null) {
+        if (userId == null)
+        {
             return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build();
         }
 
-        try {
-            Optional<OrderDTO> cancelledOrder = orderService.cancelOrder(orderId, userId);
+        try
+        {
+            Optional<OrderDTO> cancelledOrder = orderService.cancelOrder(
+                    orderId, userId);
             return cancelledOrder.map(ResponseEntity::ok)
                     .orElse(ResponseEntity.notFound().build());
-        } catch (IllegalArgumentException e) {
+        } catch (IllegalArgumentException e)
+        {
             log.error("Error cancelling order: {}", e.getMessage());
             return ResponseEntity.badRequest().build();
         }
     }
 
     @GetMapping("/stats")
-    public ResponseEntity<OrderStatsDTO> getOrderStats(HttpServletRequest request) {
+    public ResponseEntity<OrderStatsDTO> getOrderStats(
+            HttpServletRequest request)
+    {
         Long userId = tokenUtils.getUserIdFromRequest(request);
-        if (userId == null) {
+        if (userId == null)
+        {
             return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build();
         }
 
@@ -117,9 +138,12 @@ public class OrderController {
     }
 
     @GetMapping("/producer/orders")
-    public ResponseEntity<List<OrderDTO>> getProducerOrders(HttpServletRequest request) {
+    public ResponseEntity<List<OrderDTO>> getProducerOrders(
+            HttpServletRequest request)
+    {
         Long producerId = tokenUtils.getProducerIdFromRequest(request);
-        if (producerId == null) {
+        if (producerId == null)
+        {
             return ResponseEntity.status(HttpStatus.FORBIDDEN).build();
         }
 
@@ -131,28 +155,35 @@ public class OrderController {
     public ResponseEntity<OrderDTO> updateOrderStatus(
             @PathVariable Long orderId,
             @RequestBody UpdateOrderStatusRequest statusRequest,
-            HttpServletRequest request) {
+            HttpServletRequest request)
+    {
 
         Long producerId = tokenUtils.getProducerIdFromRequest(request);
-        if (producerId == null) {
+        if (producerId == null)
+        {
             return ResponseEntity.status(HttpStatus.FORBIDDEN).build();
         }
 
-        try {
+        try
+        {
             Optional<OrderDTO> updatedOrder = orderService.updateOrderStatus(
                     orderId, statusRequest.getStatus(), producerId);
             return updatedOrder.map(ResponseEntity::ok)
                     .orElse(ResponseEntity.notFound().build());
-        } catch (IllegalArgumentException e) {
+        } catch (IllegalArgumentException e)
+        {
             log.error("Error updating order status: {}", e.getMessage());
             return ResponseEntity.badRequest().build();
         }
     }
 
     @GetMapping("/all")
-    public ResponseEntity<List<OrderDTO>> getAllOrders(HttpServletRequest request) {
+    public ResponseEntity<List<OrderDTO>> getAllOrders(
+            HttpServletRequest request)
+    {
         String role = tokenUtils.getRoleFromRequest(request);
-        if (!"ROLE_ADMIN".equals(role)) {
+        if (!"ROLE_ADMIN".equals(role))
+        {
             return ResponseEntity.status(HttpStatus.FORBIDDEN).build();
         }
 
@@ -161,20 +192,24 @@ public class OrderController {
     }
 
     @PutMapping("/{orderId}/confirm-delivery")
-    public ResponseEntity<OrderDTO> confirmDelivery(
-            @PathVariable Long orderId,
-            HttpServletRequest request) {
+    public ResponseEntity<OrderDTO> confirmDelivery(@PathVariable Long orderId,
+            HttpServletRequest request)
+    {
 
         Long userId = tokenUtils.getUserIdFromRequest(request);
-        if (userId == null) {
+        if (userId == null)
+        {
             return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build();
         }
 
-        try {
-            Optional<OrderDTO> deliveredOrder = orderService.confirmDelivery(orderId, userId);
+        try
+        {
+            Optional<OrderDTO> deliveredOrder = orderService.confirmDelivery(
+                    orderId, userId);
             return deliveredOrder.map(ResponseEntity::ok)
                     .orElse(ResponseEntity.notFound().build());
-        } catch (IllegalArgumentException e) {
+        } catch (IllegalArgumentException e)
+        {
             log.error("Error confirming delivery: {}", e.getMessage());
             return ResponseEntity.badRequest().build();
         }

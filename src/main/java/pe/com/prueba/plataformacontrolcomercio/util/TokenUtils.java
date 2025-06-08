@@ -17,7 +17,8 @@ import java.nio.charset.StandardCharsets;
 import java.util.Optional;
 
 @Component
-public class TokenUtils {
+public class TokenUtils
+{
 
     private final SecretKey key;
     private final UserRepository userRepository;
@@ -26,49 +27,59 @@ public class TokenUtils {
     @Autowired
     public TokenUtils(@Value("${app.jwt.secret}") String jwtSecret,
             UserRepository userRepository,
-            ProducerRepository producerRepository) {
+            ProducerRepository producerRepository)
+    {
 
-        this.key = Keys.hmacShaKeyFor(jwtSecret.getBytes(StandardCharsets.UTF_8));
+        this.key = Keys.hmacShaKeyFor(
+                jwtSecret.getBytes(StandardCharsets.UTF_8));
         this.userRepository = userRepository;
         this.producerRepository = producerRepository;
     }
 
     /**
      * Obtiene el ID del productor a partir del token en la solicitud HTTP
-     * @param request La solicitud HTTP que contiene el token de autenticación
-     * @return El ID del productor o null si no se pudo obtener o el usuario no es productor
+     *
+     * @param request
+     *         La solicitud HTTP que contiene el token de autenticación
+     * @return El ID del productor o null si no se pudo obtener o el usuario no
+     *         es productor
      */
-    public Long getProducerIdFromRequest(HttpServletRequest request) {
-        try {
+    public Long getProducerIdFromRequest(HttpServletRequest request)
+    {
+        try
+        {
 
             String token = extractTokenFromRequest(request);
-            if (token == null) {
+            if (token == null)
+            {
                 return null;
             }
 
             String userEmail = getUserEmailFromToken(token);
-            if (userEmail == null) {
+            if (userEmail == null)
+            {
                 return null;
             }
 
-
             Optional<User> userOpt = userRepository.findByEmail(userEmail);
-            if (userOpt.isEmpty()) {
+            if (userOpt.isEmpty())
+            {
                 return null;
             }
 
             User user = userOpt.get();
 
-
-            if (!"ROLE_PRODUCER".equals(user.getRole().toString())) {
+            if (!"ROLE_PRODUCER".equals(user.getRole().toString()))
+            {
                 return null;
             }
 
-
-            Optional<Producer> producerOpt = producerRepository.findByUserId(user.getId());
+            Optional<Producer> producerOpt = producerRepository.findByUserId(
+                    user.getId());
             return producerOpt.map(Producer::getId).orElse(null);
 
-        } catch (Exception e) {
+        } catch (Exception e)
+        {
 
             e.printStackTrace();
             return null;
@@ -77,27 +88,33 @@ public class TokenUtils {
 
     /**
      * Obtiene el ID del usuario a partir del token en la solicitud HTTP
-     * @param request La solicitud HTTP que contiene el token de autenticación
+     *
+     * @param request
+     *         La solicitud HTTP que contiene el token de autenticación
      * @return El ID del usuario o null si no se pudo obtener
      */
-    public Long getUserIdFromRequest(HttpServletRequest request) {
-        try {
+    public Long getUserIdFromRequest(HttpServletRequest request)
+    {
+        try
+        {
 
             String token = extractTokenFromRequest(request);
-            if (token == null) {
+            if (token == null)
+            {
                 return null;
             }
 
             String userEmail = getUserEmailFromToken(token);
-            if (userEmail == null) {
+            if (userEmail == null)
+            {
                 return null;
             }
-
 
             Optional<User> userOpt = userRepository.findByEmail(userEmail);
             return userOpt.map(User::getId).orElse(null);
 
-        } catch (Exception e) {
+        } catch (Exception e)
+        {
 
             e.printStackTrace();
             return null;
@@ -106,27 +123,33 @@ public class TokenUtils {
 
     /**
      * Obtiene el rol del usuario a partir del token en la solicitud HTTP
-     * @param request La solicitud HTTP que contiene el token de autenticación
+     *
+     * @param request
+     *         La solicitud HTTP que contiene el token de autenticación
      * @return El rol del usuario o null si no se pudo obtener
      */
-    public String getRoleFromRequest(HttpServletRequest request) {
-        try {
+    public String getRoleFromRequest(HttpServletRequest request)
+    {
+        try
+        {
 
             String token = extractTokenFromRequest(request);
-            if (token == null) {
+            if (token == null)
+            {
                 return null;
             }
 
             String userEmail = getUserEmailFromToken(token);
-            if (userEmail == null) {
+            if (userEmail == null)
+            {
                 return null;
             }
-
 
             Optional<User> userOpt = userRepository.findByEmail(userEmail);
             return userOpt.map(user -> user.getRole().toString()).orElse(null);
 
-        } catch (Exception e) {
+        } catch (Exception e)
+        {
 
             e.printStackTrace();
             return null;
@@ -135,15 +158,18 @@ public class TokenUtils {
 
     /**
      * Extrae el token de la solicitud HTTP
-     * @param request La solicitud HTTP
+     *
+     * @param request
+     *         La solicitud HTTP
      * @return El token extraído o null si no se encontró
      */
-    private String extractTokenFromRequest(HttpServletRequest request) {
+    private String extractTokenFromRequest(HttpServletRequest request)
+    {
 
         String authHeader = request.getHeader("Authorization");
 
-
-        if (authHeader != null && authHeader.startsWith("Bearer ")) {
+        if (authHeader != null && authHeader.startsWith("Bearer "))
+        {
             return authHeader.substring(7);
         }
 
@@ -152,21 +178,22 @@ public class TokenUtils {
 
     /**
      * Extrae el email del usuario del token JWT
-     * @param token El token JWT
+     *
+     * @param token
+     *         El token JWT
      * @return El email del usuario o null si no se pudo extraer
      */
-    private String getUserEmailFromToken(String token) {
-        try {
+    private String getUserEmailFromToken(String token)
+    {
+        try
+        {
 
-            Claims claims = Jwts.parserBuilder()
-                    .setSigningKey(key)
-                    .build()
-                    .parseClaimsJws(token)
-                    .getBody();
-
+            Claims claims = Jwts.parserBuilder().setSigningKey(key).build()
+                    .parseClaimsJws(token).getBody();
 
             return claims.getSubject();
-        } catch (Exception e) {
+        } catch (Exception e)
+        {
 
             e.printStackTrace();
             return null;

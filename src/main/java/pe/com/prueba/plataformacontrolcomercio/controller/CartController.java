@@ -25,21 +25,26 @@ import java.util.List;
 @RestController
 @RequestMapping("/api/cart")
 @Slf4j
-public class CartController {
+public class CartController
+{
 
     private final ICartService cartService;
     private final TokenUtils tokenUtils;
 
     @Autowired
-    public CartController(ICartService cartService, TokenUtils tokenUtils) {
+    public CartController(ICartService cartService, TokenUtils tokenUtils)
+    {
         this.cartService = cartService;
         this.tokenUtils = tokenUtils;
     }
 
     @GetMapping("/items")
-    public ResponseEntity<List<CartItemDTO>> getCartItems(HttpServletRequest request) {
+    public ResponseEntity<List<CartItemDTO>> getCartItems(
+            HttpServletRequest request)
+    {
         Long userId = tokenUtils.getUserIdFromRequest(request);
-        if (userId == null) {
+        if (userId == null)
+        {
             return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build();
         }
 
@@ -50,64 +55,78 @@ public class CartController {
     @PostMapping("/add")
     public ResponseEntity<CartItemDTO> addToCart(
             @Valid @RequestBody AddToCartRequest addRequest,
-            HttpServletRequest request) {
+            HttpServletRequest request)
+    {
 
         Long userId = tokenUtils.getUserIdFromRequest(request);
-        if (userId == null) {
+        if (userId == null)
+        {
             return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build();
         }
 
-        try {
-            CartItemDTO cartItem = cartService.addToCart(userId, addRequest.getProductId(), addRequest.getQuantity());
+        try
+        {
+            CartItemDTO cartItem = cartService.addToCart(userId,
+                    addRequest.getProductId(), addRequest.getQuantity());
             return ResponseEntity.ok(cartItem);
-        } catch (IllegalArgumentException e) {
+        } catch (IllegalArgumentException e)
+        {
             return ResponseEntity.badRequest().build();
         }
     }
 
     @PutMapping("/items/{itemId}")
-    public ResponseEntity<CartItemDTO> updateCartItem(
-            @PathVariable Long itemId,
+    public ResponseEntity<CartItemDTO> updateCartItem(@PathVariable Long itemId,
             @Valid @RequestBody UpdateCartItemRequest updateRequest,
-            HttpServletRequest request) {
+            HttpServletRequest request)
+    {
 
         Long userId = tokenUtils.getUserIdFromRequest(request);
-        if (userId == null) {
+        if (userId == null)
+        {
             return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build();
         }
 
-        try {
-            CartItemDTO updatedItem = cartService.updateCartItem(userId, itemId, updateRequest.getQuantity());
+        try
+        {
+            CartItemDTO updatedItem = cartService.updateCartItem(userId, itemId,
+                    updateRequest.getQuantity());
             return ResponseEntity.ok(updatedItem);
-        } catch (IllegalArgumentException e) {
+        } catch (IllegalArgumentException e)
+        {
             return ResponseEntity.badRequest().build();
         }
     }
 
     @DeleteMapping("/items/{itemId}")
-    public ResponseEntity<Void> removeFromCart(
-            @PathVariable Long itemId,
-            HttpServletRequest request) {
+    public ResponseEntity<Void> removeFromCart(@PathVariable Long itemId,
+            HttpServletRequest request)
+    {
 
         Long userId = tokenUtils.getUserIdFromRequest(request);
-        if (userId == null) {
+        if (userId == null)
+        {
             return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build();
         }
 
-        try {
+        try
+        {
             boolean removed = cartService.removeFromCart(userId, itemId);
-            return removed
-                    ? ResponseEntity.noContent().build()
-                    : ResponseEntity.notFound().build();
-        } catch (IllegalArgumentException e) {
+            return removed ?
+                    ResponseEntity.noContent().build() :
+                    ResponseEntity.notFound().build();
+        } catch (IllegalArgumentException e)
+        {
             return ResponseEntity.badRequest().build();
         }
     }
 
     @DeleteMapping("/clear")
-    public ResponseEntity<Void> clearCart(HttpServletRequest request) {
+    public ResponseEntity<Void> clearCart(HttpServletRequest request)
+    {
         Long userId = tokenUtils.getUserIdFromRequest(request);
-        if (userId == null) {
+        if (userId == null)
+        {
             return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build();
         }
 
@@ -116,9 +135,11 @@ public class CartController {
     }
 
     @GetMapping("/count")
-    public ResponseEntity<Long> getCartItemCount(HttpServletRequest request) {
+    public ResponseEntity<Long> getCartItemCount(HttpServletRequest request)
+    {
         Long userId = tokenUtils.getUserIdFromRequest(request);
-        if (userId == null) {
+        if (userId == null)
+        {
             return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build();
         }
 

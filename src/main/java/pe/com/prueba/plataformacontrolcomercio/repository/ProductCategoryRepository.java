@@ -10,10 +10,15 @@ import java.util.List;
 import java.util.Optional;
 
 @Repository
-public interface ProductCategoryRepository extends JpaRepository<ProductCategory, Long>
+public interface ProductCategoryRepository
+        extends JpaRepository<ProductCategory, Long>
 {
     List<ProductCategory> findByProduct(Product product);
+
     List<ProductCategory> findByCategory(Category category);
-    Optional<ProductCategory> findByProductAndCategory(Product product, Category category);
+
+    Optional<ProductCategory> findByProductAndCategory(Product product,
+            Category category);
+
     void deleteByProductAndCategory(Product product, Category category);
 }

@@ -7,7 +7,8 @@ import lombok.NoArgsConstructor;
 @Data
 @NoArgsConstructor
 @AllArgsConstructor
-public class ProducerMarketplaceDTO {
+public class ProducerMarketplaceDTO
+{
     private Long id;
     private String businessName;
     private String description;
@@ -16,9 +17,10 @@ public class ProducerMarketplaceDTO {
     private Long productCount;
     private Double averageRating;
 
-
-    public ProducerMarketplaceDTO(Long id, String businessName, String description,
-            String location, String phone, Long productCount) {
+    public ProducerMarketplaceDTO(Long id, String businessName,
+            String description, String location, String phone,
+            Long productCount)
+    {
         this.id = id;
         this.businessName = businessName;
         this.description = description;

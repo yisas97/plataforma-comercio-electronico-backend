@@ -13,7 +13,10 @@ import java.util.Optional;
 public interface ProductTagRepository extends JpaRepository<ProductTag, Long>
 {
     List<ProductTag> findByProduct(Product product);
+
     List<ProductTag> findByTag(Tag tag);
+
     Optional<ProductTag> findByProductAndTag(Product product, Tag tag);
+
     void deleteByProductAndTag(Product product, Tag tag);
 }

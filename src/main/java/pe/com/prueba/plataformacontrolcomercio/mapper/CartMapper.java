@@ -5,10 +5,13 @@ import pe.com.prueba.plataformacontrolcomercio.dto.cart.CartItemDTO;
 import pe.com.prueba.plataformacontrolcomercio.model.CartItem;
 
 @Component
-public class CartMapper {
+public class CartMapper
+{
 
-    public CartItemDTO toDTO(CartItem cartItem) {
-        if (cartItem == null) {
+    public CartItemDTO toDTO(CartItem cartItem)
+    {
+        if (cartItem == null)
+        {
             return null;
         }
 
@@ -18,11 +21,13 @@ public class CartMapper {
         dto.setCreatedAt(cartItem.getCreatedAt());
         dto.setUpdatedAt(cartItem.getUpdatedAt());
 
-        if (cartItem.getUser() != null) {
+        if (cartItem.getUser() != null)
+        {
             dto.setUserId(cartItem.getUser().getId());
         }
 
-        if (cartItem.getProduct() != null) {
+        if (cartItem.getProduct() != null)
+        {
             dto.setProductId(cartItem.getProduct().getId());
             dto.setProductName(cartItem.getProduct().getName());
             dto.setProductPrice(cartItem.getProduct().getPrice());
@@ -35,8 +40,10 @@ public class CartMapper {
         return dto;
     }
 
-    public CartItem toEntity(CartItemDTO dto) {
-        if (dto == null) {
+    public CartItem toEntity(CartItemDTO dto)
+    {
+        if (dto == null)
+        {
             return null;
         }
 

@@ -11,7 +11,8 @@ import org.springframework.data.redis.serializer.StringRedisSerializer;
 
 @Configuration
 @Slf4j
-public class CacheConfig {
+public class CacheConfig
+{
 
     @Value("${spring.data.redis.host:localhost}")
     private String redisHost;
@@ -23,14 +24,17 @@ public class CacheConfig {
     private int redisDatabase;
 
     @Bean
-    public LettuceConnectionFactory redisConnectionFactory() {
-        RedisStandaloneConfiguration config = new RedisStandaloneConfiguration(redisHost, redisPort);
+    public LettuceConnectionFactory redisConnectionFactory()
+    {
+        RedisStandaloneConfiguration config = new RedisStandaloneConfiguration(
+                redisHost, redisPort);
         config.setDatabase(redisDatabase);
         return new LettuceConnectionFactory(config);
     }
 
     @Bean
-    public RedisTemplate<String, String> redisTemplate() {
+    public RedisTemplate<String, String> redisTemplate()
+    {
         RedisTemplate<String, String> template = new RedisTemplate<>();
         template.setConnectionFactory(redisConnectionFactory());
 
@@ -42,7 +46,8 @@ public class CacheConfig {
         template.setHashValueSerializer(stringSerializer);
 
         template.afterPropertiesSet();
-        log.info("Redis template configurado con StringRedisSerializer únicamente");
+        log.info(
+                "Redis template configurado con StringRedisSerializer únicamente");
         return template;
     }
 }

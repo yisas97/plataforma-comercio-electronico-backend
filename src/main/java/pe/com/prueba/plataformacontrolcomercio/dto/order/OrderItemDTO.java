@@ -6,7 +6,8 @@ import pe.com.prueba.plataformacontrolcomercio.model.OrderItem;
 
 @Data
 @NoArgsConstructor
-public class OrderItemDTO {
+public class OrderItemDTO
+{
     private Long id;
     private Long productId;
     private String productName;
@@ -15,13 +16,15 @@ public class OrderItemDTO {
     private Double price;
     private Double subtotal;
 
-    public OrderItemDTO(OrderItem orderItem) {
+    public OrderItemDTO(OrderItem orderItem)
+    {
         this.id = orderItem.getId();
         this.quantity = orderItem.getQuantity();
         this.price = orderItem.getPrice();
         this.subtotal = orderItem.getSubtotal();
 
-        if (orderItem.getProduct() != null) {
+        if (orderItem.getProduct() != null)
+        {
             this.productId = orderItem.getProduct().getId();
             this.productName = orderItem.getProduct().getName();
             // this.productImage = orderItem.getProduct().getImage();

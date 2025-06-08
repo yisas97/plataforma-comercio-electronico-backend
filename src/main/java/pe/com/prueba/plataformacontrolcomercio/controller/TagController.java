@@ -25,20 +25,24 @@ import java.util.Optional;
 @RestController
 @RequestMapping("/api/tags")
 @Slf4j
-public class TagController {
+public class TagController
+{
 
     private final ITagService tagService;
     private final TokenUtils tokenUtils;
 
     @Autowired
-    public TagController(ITagService tagService, TokenUtils tokenUtils) {
+    public TagController(ITagService tagService, TokenUtils tokenUtils)
+    {
         this.tagService = tagService;
         this.tokenUtils = tokenUtils;
     }
 
     @GetMapping
-    public ResponseEntity<List<Tag>> getAllTags(HttpServletRequest request) {
-        if (tokenUtils.getUserIdFromRequest(request) == null) {
+    public ResponseEntity<List<Tag>> getAllTags(HttpServletRequest request)
+    {
+        if (tokenUtils.getUserIdFromRequest(request) == null)
+        {
             return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build();
         }
 
@@ -46,8 +50,11 @@ public class TagController {
     }
 
     @GetMapping("/{id}")
-    public ResponseEntity<Tag> getTagById(@PathVariable Long id, HttpServletRequest request) {
-        if (tokenUtils.getUserIdFromRequest(request) == null) {
+    public ResponseEntity<Tag> getTagById(@PathVariable Long id,
+            HttpServletRequest request)
+    {
+        if (tokenUtils.getUserIdFromRequest(request) == null)
+        {
             return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build();
         }
 
@@ -57,8 +64,11 @@ public class TagController {
     }
 
     @GetMapping("/search")
-    public ResponseEntity<List<Tag>> searchTags(@RequestParam String name, HttpServletRequest request) {
-        if (tokenUtils.getUserIdFromRequest(request) == null) {
+    public ResponseEntity<List<Tag>> searchTags(@RequestParam String name,
+            HttpServletRequest request)
+    {
+        if (tokenUtils.getUserIdFromRequest(request) == null)
+        {
             return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build();
         }
 
@@ -66,52 +76,63 @@ public class TagController {
     }
 
     @PostMapping
-    public ResponseEntity<Tag> createTag(@Valid @RequestBody Tag tag, HttpServletRequest request) {
+    public ResponseEntity<Tag> createTag(@Valid @RequestBody Tag tag,
+            HttpServletRequest request)
+    {
         String role = tokenUtils.getRoleFromRequest(request);
-        if (!"ROLE_ADMIN".equals(role)) {
+        if (!"ROLE_ADMIN".equals(role))
+        {
             return ResponseEntity.status(HttpStatus.FORBIDDEN).build();
         }
 
-        try {
+        try
+        {
             Tag newTag = tagService.createTag(tag);
             return ResponseEntity.status(HttpStatus.CREATED).body(newTag);
-        } catch (IllegalArgumentException e) {
+        } catch (IllegalArgumentException e)
+        {
             return ResponseEntity.badRequest().build();
         }
     }
 
     @PutMapping("/{id}")
-    public ResponseEntity<Tag> updateTag(
-            @PathVariable Long id,
-            @Valid @RequestBody Tag tag,
-            HttpServletRequest request) {
+    public ResponseEntity<Tag> updateTag(@PathVariable Long id,
+            @Valid @RequestBody Tag tag, HttpServletRequest request)
+    {
 
         String role = tokenUtils.getRoleFromRequest(request);
-        if (!"ROLE_ADMIN".equals(role)) {
+        if (!"ROLE_ADMIN".equals(role))
+        {
             return ResponseEntity.status(HttpStatus.FORBIDDEN).build();
         }
 
-        try {
-            return tagService.updateTag(id, tag)
-                    .map(ResponseEntity::ok)
+        try
+        {
+            return tagService.updateTag(id, tag).map(ResponseEntity::ok)
                     .orElse(ResponseEntity.notFound().build());
-        } catch (IllegalArgumentException e) {
+        } catch (IllegalArgumentException e)
+        {
             return ResponseEntity.badRequest().build();
         }
     }
 
     @DeleteMapping("/{id}")
-    public ResponseEntity<Void> deleteTag(@PathVariable Long id, HttpServletRequest request) {
+    public ResponseEntity<Void> deleteTag(@PathVariable Long id,
+            HttpServletRequest request)
+    {
         String role = tokenUtils.getRoleFromRequest(request);
-        if (!"ROLE_ADMIN".equals(role)) {
+        if (!"ROLE_ADMIN".equals(role))
+        {
             return ResponseEntity.status(HttpStatus.FORBIDDEN).build();
         }
 
-        try {
-            return tagService.deleteTag(id)
-                    ? ResponseEntity.noContent().build()
-                    : ResponseEntity.notFound().build();
-        } catch (IllegalArgumentException e) {
+        try
+        {
+            return tagService.deleteTag(id) ?
+                    ResponseEntity.noContent().build() :
+                    ResponseEntity.notFound().build();
+        } catch (IllegalArgumentException e)
+        {
             return ResponseEntity.badRequest().build();
         }
     }

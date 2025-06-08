@@ -8,7 +8,8 @@ import java.time.LocalDateTime;
 
 @Data
 @NoArgsConstructor
-public class CartItemDTO {
+public class CartItemDTO
+{
     private Long id;
     private Long userId;
     private Long productId;
@@ -20,17 +21,20 @@ public class CartItemDTO {
     private LocalDateTime createdAt;
     private LocalDateTime updatedAt;
 
-    public CartItemDTO(CartItem cartItem) {
+    public CartItemDTO(CartItem cartItem)
+    {
         this.id = cartItem.getId();
         this.quantity = cartItem.getQuantity();
         this.createdAt = cartItem.getCreatedAt();
         this.updatedAt = cartItem.getUpdatedAt();
 
-        if (cartItem.getUser() != null) {
+        if (cartItem.getUser() != null)
+        {
             this.userId = cartItem.getUser().getId();
         }
 
-        if (cartItem.getProduct() != null) {
+        if (cartItem.getProduct() != null)
+        {
             this.productId = cartItem.getProduct().getId();
             this.productName = cartItem.getProduct().getName();
             this.productPrice = cartItem.getProduct().getPrice();

@@ -22,7 +22,8 @@ import lombok.NoArgsConstructor;
 @NoArgsConstructor
 @AllArgsConstructor
 @EqualsAndHashCode(of = "id")
-public class OrderItem {
+public class OrderItem
+{
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
@@ -35,7 +36,7 @@ public class OrderItem {
 
     @ManyToOne
     @JoinColumn(name = "product_id", nullable = false)
-    @JsonIgnoreProperties({"producer", "productCategories", "productTags"})
+    @JsonIgnoreProperties({ "producer", "productCategories", "productTags" })
     private Product product;
 
     @NotNull
@@ -46,7 +47,8 @@ public class OrderItem {
     @Positive
     private Double price; // Precio al momento de la compra
 
-    public Double getSubtotal() {
+    public Double getSubtotal()
+    {
         return price * quantity;
     }
 }

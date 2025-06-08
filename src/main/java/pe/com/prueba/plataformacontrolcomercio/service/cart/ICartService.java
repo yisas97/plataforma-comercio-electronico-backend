@@ -4,7 +4,8 @@ import pe.com.prueba.plataformacontrolcomercio.dto.cart.CartItemDTO;
 
 import java.util.List;
 
-public interface ICartService {
+public interface ICartService
+{
 
     List<CartItemDTO> getCartItemsByUserId(Long userId);
 

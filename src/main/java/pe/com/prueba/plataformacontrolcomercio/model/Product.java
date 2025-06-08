@@ -21,14 +21,13 @@ import lombok.ToString;
 
 import java.time.LocalDateTime;
 import java.util.HashSet;
-import java.util.Objects;
 import java.util.Set;
 
 @Entity
 @Data
 @NoArgsConstructor
 @AllArgsConstructor
-@ToString(exclude = {"producer", "productCategories", "productTags"})
+@ToString(exclude = { "producer", "productCategories", "productTags" })
 @EqualsAndHashCode(of = "id")
 public class Product
 {
@@ -52,7 +51,7 @@ public class Product
 
     @ManyToOne
     @JoinColumn(name = "producer_id", nullable = false)
-    @JsonIgnoreProperties({"products", "user", "createdAt", "updatedAt"})
+    @JsonIgnoreProperties({ "products", "user", "createdAt", "updatedAt" })
     private Producer producer;
 
     @OneToMany(mappedBy = "product", cascade = CascadeType.ALL, orphanRemoval = true)
@@ -63,8 +62,8 @@ public class Product
     @JsonIgnore
     private Set<ProductTag> productTags = new HashSet<>();
 
-
-    public void addCategory(Category category) {
+    public void addCategory(Category category)
+    {
         ProductCategory productCategory = new ProductCategory();
         productCategory.setProduct(this);
         productCategory.setCategory(category);
@@ -73,9 +72,12 @@ public class Product
         category.getProductCategories().add(productCategory);
     }
 
-    public void removeCategory(Category category) {
-        for (ProductCategory productCategory : new HashSet<>(productCategories)) {
-            if (productCategory.getCategory().equals(category)) {
+    public void removeCategory(Category category)
+    {
+        for (ProductCategory productCategory : new HashSet<>(productCategories))
+        {
+            if (productCategory.getCategory().equals(category))
+            {
                 productCategories.remove(productCategory);
                 category.getProductCategories().remove(productCategory);
                 productCategory.setProduct(null);
@@ -84,7 +86,8 @@ public class Product
         }
     }
 
-    public void addTag(Tag tag) {
+    public void addTag(Tag tag)
+    {
         ProductTag productTag = new ProductTag();
         productTag.setProduct(this);
         productTag.setTag(tag);
@@ -93,9 +96,12 @@ public class Product
         tag.getProductTags().add(productTag);
     }
 
-    public void removeTag(Tag tag) {
-        for (ProductTag productTag : new HashSet<>(productTags)) {
-            if (productTag.getTag().equals(tag)) {
+    public void removeTag(Tag tag)
+    {
+        for (ProductTag productTag : new HashSet<>(productTags))
+        {
+            if (productTag.getTag().equals(tag))
+            {
                 productTags.remove(productTag);
                 tag.getProductTags().remove(productTag);
                 productTag.setProduct(null);
