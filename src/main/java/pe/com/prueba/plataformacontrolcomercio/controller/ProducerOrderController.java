@@ -25,22 +25,27 @@ import java.util.Optional;
 @RestController
 @RequestMapping("/api/producer/orders")
 @Slf4j
-public class ProducerOrderController {
+public class ProducerOrderController
+{
 
     private final IOrderService orderService;
     private final TokenUtils tokenUtils;
 
     @Autowired
-    public ProducerOrderController(IOrderService orderService, TokenUtils tokenUtils) {
+    public ProducerOrderController(IOrderService orderService,
+            TokenUtils tokenUtils)
+    {
         this.orderService = orderService;
         this.tokenUtils = tokenUtils;
     }
 
     @GetMapping
     public ResponseEntity<List<OrderDTO>> getProducerOrders(
-            HttpServletRequest request) {
+            HttpServletRequest request)
+    {
         Long producerId = tokenUtils.getProducerIdFromRequest(request);
-        if (producerId == null) {
+        if (producerId == null)
+        {
             return ResponseEntity.status(HttpStatus.FORBIDDEN).build();
         }
 
@@ -51,16 +56,19 @@ public class ProducerOrderController {
 
     @GetMapping("/status/{status}")
     public ResponseEntity<List<OrderDTO>> getProducerOrdersByStatus(
-            @PathVariable OrderStatus status,
-            HttpServletRequest request) {
+            @PathVariable OrderStatus status, HttpServletRequest request)
+    {
 
         Long producerId = tokenUtils.getProducerIdFromRequest(request);
-        if (producerId == null) {
+        if (producerId == null)
+        {
             return ResponseEntity.status(HttpStatus.FORBIDDEN).build();
         }
 
-        log.info("Getting orders with status {} for producer: {}", status, producerId);
-        List<OrderDTO> orders = orderService.getOrdersByProducerIdAndStatus(producerId, status);
+        log.info("Getting orders with status {} for producer: {}", status,
+                producerId);
+        List<OrderDTO> orders = orderService.getOrdersByProducerIdAndStatus(
+                producerId, status);
         return ResponseEntity.ok(orders);
     }
 
@@ -68,110 +76,132 @@ public class ProducerOrderController {
     public ResponseEntity<OrderDTO> updateOrderStatus(
             @PathVariable Long orderId,
             @Valid @RequestBody UpdateOrderStatusRequest statusRequest,
-            HttpServletRequest request) {
+            HttpServletRequest request)
+    {
 
         Long producerId = tokenUtils.getProducerIdFromRequest(request);
-        if (producerId == null) {
+        if (producerId == null)
+        {
             return ResponseEntity.status(HttpStatus.FORBIDDEN).build();
         }
 
-        log.info("Producer {} updating order {} to status {}", producerId, orderId, statusRequest.getStatus());
+        log.info("Producer {} updating order {} to status {}", producerId,
+                orderId, statusRequest.getStatus());
 
-        try {
+        try
+        {
             Optional<OrderDTO> updatedOrder = orderService.updateOrderStatusByProducer(
                     orderId, statusRequest.getStatus(), producerId);
 
             return updatedOrder.map(ResponseEntity::ok)
                     .orElse(ResponseEntity.notFound().build());
-        } catch (IllegalArgumentException e) {
+        } catch (IllegalArgumentException e)
+        {
             log.error("Error updating order status: {}", e.getMessage());
             return ResponseEntity.badRequest().build();
         }
     }
 
     @PutMapping("/{orderId}/confirm")
-    public ResponseEntity<OrderDTO> confirmOrder(
-            @PathVariable Long orderId,
-            HttpServletRequest request) {
+    public ResponseEntity<OrderDTO> confirmOrder(@PathVariable Long orderId,
+            HttpServletRequest request)
+    {
 
         Long producerId = tokenUtils.getProducerIdFromRequest(request);
-        if (producerId == null) {
+        if (producerId == null)
+        {
             return ResponseEntity.status(HttpStatus.FORBIDDEN).build();
         }
 
-        try {
+        try
+        {
             Optional<OrderDTO> confirmedOrder = orderService.updateOrderStatusByProducer(
                     orderId, OrderStatus.CONFIRMED, producerId);
 
             return confirmedOrder.map(ResponseEntity::ok)
                     .orElse(ResponseEntity.notFound().build());
-        } catch (IllegalArgumentException e) {
+        } catch (IllegalArgumentException e)
+        {
             return ResponseEntity.badRequest().build();
         }
     }
 
     @PutMapping("/{orderId}/prepare")
-    public ResponseEntity<OrderDTO> prepareOrder(
-            @PathVariable Long orderId,
-            HttpServletRequest request) {
+    public ResponseEntity<OrderDTO> prepareOrder(@PathVariable Long orderId,
+            HttpServletRequest request)
+    {
 
         Long producerId = tokenUtils.getProducerIdFromRequest(request);
-        if (producerId == null) {
+        if (producerId == null)
+        {
             return ResponseEntity.status(HttpStatus.FORBIDDEN).build();
         }
 
-        try {
+        try
+        {
             Optional<OrderDTO> preparingOrder = orderService.updateOrderStatusByProducer(
                     orderId, OrderStatus.PREPARING, producerId);
 
             return preparingOrder.map(ResponseEntity::ok)
                     .orElse(ResponseEntity.notFound().build());
-        } catch (IllegalArgumentException e) {
+        } catch (IllegalArgumentException e)
+        {
             return ResponseEntity.badRequest().build();
         }
     }
 
     @PutMapping("/{orderId}/ship")
-    public ResponseEntity<OrderDTO> shipOrder(
-            @PathVariable Long orderId,
-            HttpServletRequest request) {
+    public ResponseEntity<OrderDTO> shipOrder(@PathVariable Long orderId,
+            HttpServletRequest request)
+    {
 
         Long producerId = tokenUtils.getProducerIdFromRequest(request);
-        if (producerId == null) {
+        if (producerId == null)
+        {
             return ResponseEntity.status(HttpStatus.FORBIDDEN).build();
         }
 
-        try {
+        try
+        {
             Optional<OrderDTO> shippedOrder = orderService.updateOrderStatusByProducer(
                     orderId, OrderStatus.SHIPPED, producerId);
 
             return shippedOrder.map(ResponseEntity::ok)
                     .orElse(ResponseEntity.notFound().build());
-        } catch (IllegalArgumentException e) {
+        } catch (IllegalArgumentException e)
+        {
             return ResponseEntity.badRequest().build();
         }
     }
 
     @GetMapping("/stats")
-    public ResponseEntity<ProducerSalesStatsDTO> getSalesStats(HttpServletRequest request) {
+    public ResponseEntity<ProducerSalesStatsDTO> getSalesStats(
+            HttpServletRequest request)
+    {
         Long producerId = tokenUtils.getProducerIdFromRequest(request);
-        if (producerId == null) {
+        if (producerId == null)
+        {
             return ResponseEntity.status(HttpStatus.FORBIDDEN).build();
         }
 
         log.info("Getting sales stats for producer: {}", producerId);
-        ProducerSalesStatsDTO stats = orderService.getProducerSalesStats(producerId);
+        ProducerSalesStatsDTO stats = orderService.getProducerSalesStats(
+                producerId);
         return ResponseEntity.ok(stats);
     }
 
     @GetMapping("/daily-summary")
-    public ResponseEntity<List<OrderDTO>> getDailyOrdersSummary(HttpServletRequest request) {
+    public ResponseEntity<List<OrderDTO>> getDailyOrdersSummary(
+            HttpServletRequest request)
+    {
         Long producerId = tokenUtils.getProducerIdFromRequest(request);
-        if (producerId == null) {
+        if (producerId == null)
+        {
             return ResponseEntity.status(HttpStatus.FORBIDDEN).build();
         }
 
-        List<OrderDTO> todayOrders = orderService.getTodayOrdersByProducerId(producerId);
+        List<OrderDTO> todayOrders = orderService.getTodayOrdersByProducerId(
+                producerId);
         return ResponseEntity.ok(todayOrders);
     }
 }

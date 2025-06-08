@@ -20,7 +20,8 @@ import java.time.LocalDateTime;
 @NoArgsConstructor
 @AllArgsConstructor
 @EqualsAndHashCode(of = "id")
-public class ProductTag {
+public class ProductTag
+{
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)

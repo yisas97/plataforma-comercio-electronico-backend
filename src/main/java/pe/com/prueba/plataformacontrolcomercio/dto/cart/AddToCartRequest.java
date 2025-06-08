@@ -5,7 +5,8 @@ import jakarta.validation.constraints.Positive;
 import lombok.Data;
 
 @Data
-public class AddToCartRequest {
+public class AddToCartRequest
+{
     @NotNull(message = "ID del producto es obligatorio")
     private Long productId;
 

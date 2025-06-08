@@ -1,5 +1,6 @@
 package pe.com.prueba.plataformacontrolcomercio.service;
 
+import com.fasterxml.jackson.core.type.TypeReference;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
@@ -19,7 +20,6 @@ import pe.com.prueba.plataformacontrolcomercio.repository.ProductRepository;
 import pe.com.prueba.plataformacontrolcomercio.repository.ProductTagRepository;
 import pe.com.prueba.plataformacontrolcomercio.repository.TagRepository;
 import pe.com.prueba.plataformacontrolcomercio.service.cache.CacheService;
-import java.util.stream.Collectors;
 
 import java.time.LocalDateTime;
 import java.util.List;
@@ -40,15 +40,13 @@ public class ProductService implements IProductService
     private final CacheService cacheService;
 
     @Autowired
-    public ProductService(
-            ProductRepository productRepository,
+    public ProductService(ProductRepository productRepository,
             ProducerRepository producerRepository,
-            CategoryRepository categoryRepository,
-            TagRepository tagRepository,
+            CategoryRepository categoryRepository, TagRepository tagRepository,
             ProductCategoryRepository productCategoryRepository,
             ProductTagRepository productTagRepository,
-            ProductMapper productMapper,
-            CacheService cacheService) {
+            ProductMapper productMapper, CacheService cacheService)
+    {
         this.productRepository = productRepository;
         this.producerRepository = producerRepository;
         this.categoryRepository = categoryRepository;
@@ -60,75 +58,121 @@ public class ProductService implements IProductService
     }
 
     @Override
-    public List<Product> getAllProducts() {
+    public List<Product> getAllProducts()
+    {
         String cacheKey = "products:all";
-        return cacheService.getFromCache(cacheKey, List.class,
-                productRepository::findAll);
+        return cacheService.getFromCache(cacheKey,
+                new TypeReference<List<Product>>()
+                {
+                }, () -> {
+                    log.info(
+                            "Consultando todos los productos desde la base de datos");
+                    return productRepository.findAll();
+                });
     }
 
     @Override
-    public List<Product> getProductsByProducerId(Long producerId) {
+    public List<Product> getProductsByProducerId(Long producerId)
+    {
         String cacheKey = "products:producer:" + producerId;
-        return cacheService.getFromCache(cacheKey, List.class,
-                () -> productRepository.findByProducerId(producerId));
+        return cacheService.getFromCache(cacheKey,
+                new TypeReference<List<Product>>()
+                {
+                }, () -> {
+                    log.info(
+                            "Consulta los productos del productor {} de la base de datos",
+                            producerId);
+                    return productRepository.findByProducerId(producerId);
+                });
     }
 
     @Override
-    public Optional<Product> getProductById(Long id) {
+    public Optional<Product> getProductById(Long id)
+    {
         String cacheKey = "product:" + id;
-        Product cachedProduct = cacheService.getFromCache(cacheKey, Product.class,
-                () -> productRepository.findById(id).orElse(null));
+        Product cachedProduct = cacheService.getFromCache(cacheKey,
+                Product.class, () -> {
+                    log.info("Fetching product {} from database", id);
+                    return productRepository.findById(id).orElse(null);
+                });
         return Optional.ofNullable(cachedProduct);
     }
 
     @Override
-    public List<Product> searchProductsByName(String name) {
-        String cacheKey = "products:search:name:" + name.toLowerCase();
-        return cacheService.getFromCache(cacheKey, List.class,
-                () -> productRepository.findByNameContainingIgnoreCase(name));
+    public List<Product> searchProductsByName(String name)
+    {
+        String cacheKey = "products:search:" + name.toLowerCase();
+        return cacheService.getFromCache(cacheKey,
+                new TypeReference<List<Product>>()
+                {
+                }, () -> {
+                    log.info("Searching products by name: {}", name);
+                    return productRepository.findByNameContainingIgnoreCase(
+                            name);
+                });
     }
 
     @Override
-    public List<Product> searchProductsByNameAndProducerId(String name, Long producerId) {
+    public List<Product> searchProductsByNameAndProducerId(String name,
+            Long producerId)
+    {
         String cacheKey = "products:search:name:" + name.toLowerCase() + ":producer:" + producerId;
         return cacheService.getFromCache(cacheKey, List.class,
-                () -> productRepository.findByNameContainingIgnoreCaseAndProducerId(name, producerId));
+                () -> productRepository.findByNameContainingIgnoreCaseAndProducerId(
+                        name, producerId));
     }
 
     @Override
-    public List<Product> getProductsByCategoryIdAndProducerId(Long categoryId, Long producerId) {
-        String cacheKey = "products:category:" + categoryId + ":producer:" + producerId;
-        return cacheService.getFromCache(cacheKey, List.class,
-                () -> productRepository.findByCategoryIdAndProducerId(categoryId, producerId));
+    public List<Product> getProductsByCategoryIdAndProducerId(Long categoryId,
+            Long producerId)
+    {
+        String cacheKey = "products:category:" + categoryId;
+        return cacheService.getFromCache(cacheKey,
+                new TypeReference<List<Product>>()
+                {
+                }, () -> {
+                    log.info("Fetching products by category {} from database",
+                            categoryId);
+                    return productRepository.findByCategoryId(categoryId);
+                });
     }
 
     @Override
-    public List<Product> getProductsByTagId(Long tagId) {
+    public List<Product> getProductsByTagId(Long tagId)
+    {
         String cacheKey = "products:tag:" + tagId;
         return cacheService.getFromCache(cacheKey, List.class,
                 () -> productRepository.findByTagId(tagId));
     }
 
     @Override
-    public List<Product> getProductsByTagIdAndProducerId(Long tagId, Long producerId) {
+    public List<Product> getProductsByTagIdAndProducerId(Long tagId,
+            Long producerId)
+    {
         String cacheKey = "products:tag:" + tagId + ":producer:" + producerId;
         return cacheService.getFromCache(cacheKey, List.class,
-                () -> productRepository.findByTagIdAndProducerId(tagId, producerId));
+                () -> productRepository.findByTagIdAndProducerId(tagId,
+                        producerId));
     }
 
     @Override
     public List<Product> getProductsByCategoryIdsAndTagIdsAndProducerId(
-            List<Long> categoryIds, List<Long> tagIds, Long producerId) {
+            List<Long> categoryIds, List<Long> tagIds, Long producerId)
+    {
         String cacheKey = "products:complex:" + categoryIds.toString() + ":tags:" + tagIds.toString() + ":producer:" + producerId;
         return cacheService.getFromCache(cacheKey, List.class,
-                () -> productRepository.findByCategoryIdsAndTagIdsAndProducerId(categoryIds, tagIds, producerId));
+                () -> productRepository.findByCategoryIdsAndTagIdsAndProducerId(
+                        categoryIds, tagIds, producerId));
     }
 
     @Override
     @Transactional
-    public ProductDTO createProduct(ProductDTO productDTO) {
-        if (!producerRepository.existsById(productDTO.getProducerId())) {
-            throw new IllegalArgumentException("Productor no encontrado con ID: " + productDTO.getProducerId());
+    public ProductDTO createProduct(ProductDTO productDTO)
+    {
+        if (!producerRepository.existsById(productDTO.getProducerId()))
+        {
+            throw new IllegalArgumentException(
+                    "Productor no encontrado con ID: " + productDTO.getProducerId());
         }
 
         Product product = productMapper.toEntity(productDTO);
@@ -138,25 +182,55 @@ public class ProductService implements IProductService
 
         Product savedProduct = productRepository.save(product);
 
-        cacheService.invalidatePattern("products:all");
-        cacheService.invalidatePattern("products:producer:" + savedProduct.getProducer().getId());
-        cacheService.invalidatePattern("products:search:*");
-        log.info("Cache invalidated after creating product: {}", savedProduct.getId());
-
+        invalidateProductCaches(savedProduct);
         return productMapper.toDTO(savedProduct);
+    }
+
+    private void invalidateProductCaches(Product product)
+    {
+        cacheService.invalidateCache("product:" + product.getId());
+        if (product.getProducer() != null)
+        {
+            cacheService.invalidatePattern(
+                    "products:producer:" + product.getProducer().getId());
+        }
+
+        if (product.getProductCategories() != null)
+        {
+            product.getProductCategories().forEach(
+                    category -> cacheService.invalidatePattern(
+                            "products:category:" + category.getId()));
+        }
+
+        if (product.getProductTags() != null)
+        {
+            product.getProductTags().forEach(
+                    tag -> cacheService.invalidatePattern(
+                            "products:tag:" + tag.getId()));
+        }
+
+        cacheService.invalidatePattern("products:all");
+        cacheService.invalidatePattern("products:marketplace:*");
+        cacheService.invalidatePattern("products:search:*");
     }
 
     @Override
     @Transactional
-    public Optional<ProductDTO> updateProduct(ProductDTO productDTO) {
-        if (!producerRepository.existsById(productDTO.getProducerId())) {
-            throw new IllegalArgumentException("Productor no encontrado con ID: " + productDTO.getProducerId());
+    public Optional<ProductDTO> updateProduct(ProductDTO productDTO)
+    {
+        if (!producerRepository.existsById(productDTO.getProducerId()))
+        {
+            throw new IllegalArgumentException(
+                    "Productor no encontrado con ID: " + productDTO.getProducerId());
         }
 
         return productRepository.findById(productDTO.getId())
                 .map(existingProduct -> {
-                    if (!existingProduct.getProducer().getId().equals(productDTO.getProducerId())) {
-                        throw new IllegalArgumentException("Este producto no pertenece al productor especificado");
+                    if (!existingProduct.getProducer().getId()
+                            .equals(productDTO.getProducerId()))
+                    {
+                        throw new IllegalArgumentException(
+                                "Este producto no pertenece al productor especificado");
                     }
 
                     LocalDateTime createdAt = existingProduct.getCreatedAt();
@@ -164,23 +238,23 @@ public class ProductService implements IProductService
                     updatedProduct.setCreatedAt(createdAt);
                     updatedProduct.setUpdatedAt(LocalDateTime.now());
 
-                    Product savedProduct = productRepository.save(updatedProduct);
+                    Product savedProduct = productRepository.save(
+                            updatedProduct);
 
-                    cacheService.invalidateCache("product:" + savedProduct.getId());
-                    cacheService.invalidatePattern("products:all");
-                    cacheService.invalidatePattern("products:producer:" + savedProduct.getProducer().getId());
-                    cacheService.invalidatePattern("products:search:*");
-                    log.info("Cache invalidated after updating product: {}", savedProduct.getId());
+                    invalidateProductCaches(updatedProduct);
 
                     return productMapper.toDTO(savedProduct);
                 });
     }
 
     @Override
-    public boolean deleteProduct(Long id, Long producerId) {
+    public boolean deleteProduct(Long id, Long producerId)
+    {
         return productRepository.findById(id).map(product -> {
-            if (!product.getProducer().getId().equals(producerId)) {
-                throw new IllegalArgumentException("Este producto no pertenece al productor especificado");
+            if (!product.getProducer().getId().equals(producerId))
+            {
+                throw new IllegalArgumentException(
+                        "Este producto no pertenece al productor especificado");
             }
 
             productRepository.delete(product);
@@ -197,21 +271,29 @@ public class ProductService implements IProductService
 
     @Override
     @Transactional
-    public boolean addCategoryToProduct(Long productId, Long categoryId, Long producerId) {
+    public boolean addCategoryToProduct(Long productId, Long categoryId,
+            Long producerId)
+    {
         Optional<Product> productOpt = productRepository.findById(productId);
-        Optional<Category> categoryOpt = categoryRepository.findById(categoryId);
+        Optional<Category> categoryOpt = categoryRepository.findById(
+                categoryId);
 
-        if (productOpt.isEmpty() || categoryOpt.isEmpty()) {
+        if (productOpt.isEmpty() || categoryOpt.isEmpty())
+        {
             return false;
         }
 
         Product product = productOpt.get();
 
-        if (!product.getProducer().getId().equals(producerId)) {
-            throw new IllegalArgumentException("Este producto no pertenece al productor especificado");
+        if (!product.getProducer().getId().equals(producerId))
+        {
+            throw new IllegalArgumentException(
+                    "Este producto no pertenece al productor especificado");
         }
 
-        if (productCategoryRepository.findByProductAndCategory(product, categoryOpt.get()).isPresent()) {
+        if (productCategoryRepository.findByProductAndCategory(product,
+                categoryOpt.get()).isPresent())
+        {
             return true;
         }
 
@@ -224,35 +306,47 @@ public class ProductService implements IProductService
         cacheService.invalidateCache("product:" + productId);
         cacheService.invalidatePattern("products:category:" + categoryId + "*");
         cacheService.invalidatePattern("products:complex:*");
-        log.info("Cache invalidated after adding category {} to product: {}", categoryId, productId);
+        log.info("Cache invalidated after adding category {} to product: {}",
+                categoryId, productId);
 
         return true;
     }
 
     @Override
     @Transactional
-    public boolean removeCategoryFromProduct(Long productId, Long categoryId, Long producerId) {
+    public boolean removeCategoryFromProduct(Long productId, Long categoryId,
+            Long producerId)
+    {
         Optional<Product> productOpt = productRepository.findById(productId);
-        Optional<Category> categoryOpt = categoryRepository.findById(categoryId);
+        Optional<Category> categoryOpt = categoryRepository.findById(
+                categoryId);
 
-        if (productOpt.isEmpty() || categoryOpt.isEmpty()) {
+        if (productOpt.isEmpty() || categoryOpt.isEmpty())
+        {
             return false;
         }
 
         Product product = productOpt.get();
 
-        if (!product.getProducer().getId().equals(producerId)) {
-            throw new IllegalArgumentException("Este producto no pertenece al productor especificado");
+        if (!product.getProducer().getId().equals(producerId))
+        {
+            throw new IllegalArgumentException(
+                    "Este producto no pertenece al productor especificado");
         }
 
-        Optional<ProductCategory> productCategoryOpt = productCategoryRepository.findByProductAndCategory(product, categoryOpt.get());
-        if (productCategoryOpt.isPresent()) {
+        Optional<ProductCategory> productCategoryOpt = productCategoryRepository.findByProductAndCategory(
+                product, categoryOpt.get());
+        if (productCategoryOpt.isPresent())
+        {
             productCategoryRepository.delete(productCategoryOpt.get());
 
             cacheService.invalidateCache("product:" + productId);
-            cacheService.invalidatePattern("products:category:" + categoryId + "*");
+            cacheService.invalidatePattern(
+                    "products:category:" + categoryId + "*");
             cacheService.invalidatePattern("products:complex:*");
-            log.info("Cache invalidated after removing category {} from product: {}", categoryId, productId);
+            log.info(
+                    "Cache invalidated after removing category {} from product: {}",
+                    categoryId, productId);
 
             return true;
         }
@@ -262,21 +356,27 @@ public class ProductService implements IProductService
 
     @Override
     @Transactional
-    public boolean addTagToProduct(Long productId, Long tagId, Long producerId) {
+    public boolean addTagToProduct(Long productId, Long tagId, Long producerId)
+    {
         Optional<Product> productOpt = productRepository.findById(productId);
         Optional<Tag> tagOpt = tagRepository.findById(tagId);
 
-        if (productOpt.isEmpty() || tagOpt.isEmpty()) {
+        if (productOpt.isEmpty() || tagOpt.isEmpty())
+        {
             return false;
         }
 
         Product product = productOpt.get();
 
-        if (!product.getProducer().getId().equals(producerId)) {
-            throw new IllegalArgumentException("Este producto no pertenece al productor especificado");
+        if (!product.getProducer().getId().equals(producerId))
+        {
+            throw new IllegalArgumentException(
+                    "Este producto no pertenece al productor especificado");
         }
 
-        if (productTagRepository.findByProductAndTag(product, tagOpt.get()).isPresent()) {
+        if (productTagRepository.findByProductAndTag(product, tagOpt.get())
+                .isPresent())
+        {
             return true;
         }
 
@@ -289,35 +389,44 @@ public class ProductService implements IProductService
         cacheService.invalidateCache("product:" + productId);
         cacheService.invalidatePattern("products:tag:" + tagId + "*");
         cacheService.invalidatePattern("products:complex:*");
-        log.info("Cache invalidated after adding tag {} to product: {}", tagId, productId);
+        log.info("Cache invalidated after adding tag {} to product: {}", tagId,
+                productId);
 
         return true;
     }
 
     @Override
     @Transactional
-    public boolean removeTagFromProduct(Long productId, Long tagId, Long producerId) {
+    public boolean removeTagFromProduct(Long productId, Long tagId,
+            Long producerId)
+    {
         Optional<Product> productOpt = productRepository.findById(productId);
         Optional<Tag> tagOpt = tagRepository.findById(tagId);
 
-        if (productOpt.isEmpty() || tagOpt.isEmpty()) {
+        if (productOpt.isEmpty() || tagOpt.isEmpty())
+        {
             return false;
         }
 
         Product product = productOpt.get();
 
-        if (!product.getProducer().getId().equals(producerId)) {
-            throw new IllegalArgumentException("Este producto no pertenece al productor especificado");
+        if (!product.getProducer().getId().equals(producerId))
+        {
+            throw new IllegalArgumentException(
+                    "Este producto no pertenece al productor especificado");
         }
 
-        Optional<ProductTag> productTagOpt = productTagRepository.findByProductAndTag(product, tagOpt.get());
-        if (productTagOpt.isPresent()) {
+        Optional<ProductTag> productTagOpt = productTagRepository.findByProductAndTag(
+                product, tagOpt.get());
+        if (productTagOpt.isPresent())
+        {
             productTagRepository.delete(productTagOpt.get());
 
             cacheService.invalidateCache("product:" + productId);
             cacheService.invalidatePattern("products:tag:" + tagId + "*");
             cacheService.invalidatePattern("products:complex:*");
-            log.info("Cache invalidated after removing tag {} from product: {}", tagId, productId);
+            log.info("Cache invalidated after removing tag {} from product: {}",
+                    tagId, productId);
 
             return true;
         }
@@ -326,31 +435,43 @@ public class ProductService implements IProductService
     }
 
     @Override
-    public List<Product> getProductsByCategoryId(Long categoryId) {
+    public List<Product> getProductsByCategoryId(Long categoryId)
+    {
         String cacheKey = "products:category:" + categoryId;
-        return cacheService.getFromCache(cacheKey, List.class,
-                () -> productRepository.findByCategoryId(categoryId));
+        return cacheService.getFromCache(cacheKey,
+                new TypeReference<List<Product>>()
+                {
+                }, () -> {
+                    log.info("Fetching products by category {} from database",
+                            categoryId);
+                    return productRepository.findByCategoryId(categoryId);
+                });
     }
 
     @Override
-    public List<ProducerMarketplaceDTO> getApprovedProducersWithStock() {
+    public List<ProducerMarketplaceDTO> getApprovedProducersWithStock()
+    {
         String cacheKey = "producers:approved:with-stock";
         return cacheService.getFromCache(cacheKey, List.class,
                 () -> productRepository.findApprovedProducersWithStock());
     }
 
     @Override
-    public List<Product> getProductsByProducerIdForMarketplace(Long producerId) {
+    public List<Product> getProductsByProducerIdForMarketplace(Long producerId)
+    {
         String cacheKey = "products:marketplace:producer:" + producerId;
         return cacheService.getFromCache(cacheKey, List.class,
-                () -> productRepository.findByProducerIdAndProducerApprovedTrue(producerId));
+                () -> productRepository.findByProducerIdAndProducerApprovedTrue(
+                        producerId));
     }
 
     @Override
-    public List<Product> searchProductsByProducerName(String producerName) {
+    public List<Product> searchProductsByProducerName(String producerName)
+    {
         String cacheKey = "products:search:producer-name:" + producerName.toLowerCase();
         return cacheService.getFromCache(cacheKey, List.class,
-                () -> productRepository.findByProducerBusinessNameContainingIgnoreCaseAndProducerApprovedTrue(producerName));
+                () -> productRepository.findByProducerBusinessNameContainingIgnoreCaseAndProducerApprovedTrue(
+                        producerName));
     }
 
 }
