@@ -23,6 +23,7 @@ import pe.com.prueba.plataformacontrolcomercio.model.Product;
 import pe.com.prueba.plataformacontrolcomercio.model.blockchain.ProductBlockchain;
 import pe.com.prueba.plataformacontrolcomercio.service.IProductService;
 import pe.com.prueba.plataformacontrolcomercio.service.blockchain.BlockchainService;
+import pe.com.prueba.plataformacontrolcomercio.service.ia.IAIClientService;
 import pe.com.prueba.plataformacontrolcomercio.util.TokenUtils;
 
 import java.util.HashMap;
@@ -41,16 +42,19 @@ public class ProductController
     private final TokenUtils tokenUtils;
     private final ProductMapper productMapper;
     private final BlockchainService blockchainService;
+    private final IAIClientService aiClientService;
 
     @Autowired
     public ProductController(IProductService productService,
             TokenUtils tokenUtils, ProductMapper productMapper,
-            BlockchainService blockchainService)
+            BlockchainService blockchainService,
+            IAIClientService aiClientService)
     {
         this.productService = productService;
         this.tokenUtils = tokenUtils;
         this.productMapper = productMapper;
         this.blockchainService = blockchainService;
+        this.aiClientService = aiClientService;
     }
 
     @GetMapping("/all")
@@ -434,17 +438,22 @@ public class ProductController
 
     @GetMapping("/marketplace/{id}")
     public ResponseEntity<ProductDTO> getMarketplaceProductById(
-            @PathVariable Long id)
+            @PathVariable Long id, HttpServletRequest request)
     {
         log.info("Getting marketplace product with id: {}", id);
 
         Optional<Product> product = productService.getProductById(id);
 
-        if (product.isPresent() && product.get().getQuantity() > 0)
-        {
+        if (product.isPresent() && product.get().getQuantity() > 0) {
+
+            Long userId = getUserIdFromRequest(request);
+            if (userId != null) {
+                log.info("Tracking VIEW interaction for user {} on product {}", userId, id);
+                aiClientService.trackInteraction(userId, id, "VIEW");
+            }
+
             return ResponseEntity.ok(productMapper.toDTO(product.get()));
-        } else
-        {
+        } else {
             return ResponseEntity.notFound().build();
         }
     }
@@ -573,5 +582,122 @@ public class ProductController
         }
 
         return ResponseEntity.ok(response);
+    }
+
+
+    @GetMapping("/recommendations")
+    public ResponseEntity<List<ProductDTO>> getRecommendationsForUser(
+            HttpServletRequest request,
+            @RequestParam(defaultValue = "10") int limit) {
+
+        Long userId = getUserIdFromRequest(request);
+        if (userId == null) {
+            return getPopularRecommendations(limit);
+        }
+
+        try {
+            log.info("Getting AI recommendations for user: {}", userId);
+
+            String url = aiClientService.getAiServiceUrl() + "/api/ai/recommendations/" + userId + "?limit=" + limit;
+            ProductDTO[] recommendations = aiClientService.getRestTemplate().getForObject(url, ProductDTO[].class);
+
+            if (recommendations != null && recommendations.length > 0) {
+                return ResponseEntity.ok(List.of(recommendations));
+            }
+
+        } catch (Exception e) {
+            log.error("Error getting recommendations for user {}: {}", userId, e.getMessage());
+        }
+
+        return getPopularRecommendations(limit);
+    }
+
+    @GetMapping("/recommendations/popular")
+    public ResponseEntity<List<ProductDTO>> getPopularRecommendations(
+            @RequestParam(defaultValue = "10") int limit) {
+
+        try {
+            log.info("Getting popular recommendations from AI service");
+
+            String url = aiClientService.getAiServiceUrl() + "/api/ai/recommendations/popular?limit=" + limit;
+            ProductDTO[] recommendations = aiClientService.getRestTemplate().getForObject(url, ProductDTO[].class);
+
+            if (recommendations != null && recommendations.length > 0) {
+                return ResponseEntity.ok(List.of(recommendations));
+            }
+
+        } catch (Exception e) {
+            log.error("Error getting popular recommendations: {}", e.getMessage());
+        }
+
+        // Fallback final: productos del marketplace con más stock
+        List<ProductDTO> fallbackProducts = productService.getAllProducts().stream()
+                .filter(product -> product.getQuantity() > 0)
+                .sorted((p1, p2) -> Integer.compare(p2.getQuantity(), p1.getQuantity()))
+                .limit(limit)
+                .map(productMapper::toDTO)
+                .collect(Collectors.toList());
+
+        return ResponseEntity.ok(fallbackProducts);
+    }
+
+    @PostMapping("/marketplace/{id}/favorite")
+    public ResponseEntity<Map<String, Object>> favoriteProduct(
+            @PathVariable Long id,
+            HttpServletRequest request) {
+
+        Long userId = getUserIdFromRequest(request);
+        if (userId == null) {
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build();
+        }
+
+        Optional<Product> product = productService.getProductById(id);
+        if (product.isEmpty()) {
+            return ResponseEntity.notFound().build();
+        }
+
+        log.info("Tracking FAVORITE interaction for user {} on product {}", userId, id);
+        aiClientService.trackInteraction(userId, id, "FAVORITE");
+
+        Map<String, Object> response = Map.of(
+                "success", true,
+                "message", "Producto agregado a favoritos",
+                "productId", id
+        );
+
+        return ResponseEntity.ok(response);
+    }
+
+    @GetMapping("/marketplace/{id}/detail")
+    public ResponseEntity<ProductDTO> getMarketplaceProductDetail(
+            @PathVariable Long id,
+            HttpServletRequest request) {
+
+        log.info("Client viewing marketplace product detail: {}", id);
+
+        Optional<Product> product = productService.getProductById(id);
+
+        if (product.isPresent() && product.get().getQuantity() > 0) {
+            ProductDTO productDTO = productMapper.toDTO(product.get());
+
+            Long userId = getUserIdFromRequest(request);
+            if (userId != null) {
+                log.info("Tracking VIEW interaction for user {} on product {}", userId, id);
+                aiClientService.trackInteraction(userId, id, "VIEW");
+            }
+
+            return ResponseEntity.ok(productDTO);
+        } else {
+            return ResponseEntity.notFound().build();
+        }
+    }
+
+    private Long getUserIdFromRequest(HttpServletRequest request) {
+        try {
+            return tokenUtils.getUserIdFromRequest(request);
+        } catch (Exception e) {
+            log.debug("No user authenticated in request");
+            return null;
+        }
     }
 }

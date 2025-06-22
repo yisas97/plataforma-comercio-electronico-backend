@@ -17,6 +17,7 @@ import pe.com.prueba.plataformacontrolcomercio.dto.CreateOrderRequest;
 import pe.com.prueba.plataformacontrolcomercio.dto.order.OrderDTO;
 import pe.com.prueba.plataformacontrolcomercio.dto.order.OrderStatsDTO;
 import pe.com.prueba.plataformacontrolcomercio.dto.order.UpdateOrderStatusRequest;
+import pe.com.prueba.plataformacontrolcomercio.service.ia.IAIClientService;
 import pe.com.prueba.plataformacontrolcomercio.service.order.IOrderService;
 import pe.com.prueba.plataformacontrolcomercio.util.TokenUtils;
 
@@ -31,40 +32,44 @@ public class OrderController
 
     private final IOrderService orderService;
     private final TokenUtils tokenUtils;
+    private final IAIClientService aiClientService;
 
     @Autowired
-    public OrderController(IOrderService orderService, TokenUtils tokenUtils)
+    public OrderController(IOrderService orderService, TokenUtils tokenUtils,
+            IAIClientService aiClientService)
     {
         this.orderService = orderService;
         this.tokenUtils = tokenUtils;
+        this.aiClientService = aiClientService;
     }
 
     @PostMapping
     public ResponseEntity<OrderDTO> createOrder(
             @Valid @RequestBody CreateOrderRequest createOrderRequest,
-            HttpServletRequest request)
-    {
+            HttpServletRequest request) {
 
         Long userId = tokenUtils.getUserIdFromRequest(request);
-        if (userId == null)
-        {
+        if (userId == null) {
             return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build();
         }
 
-        try
-        {
-            OrderDTO createdOrder = orderService.createOrder(userId,
-                    createOrderRequest);
+        try {
+            OrderDTO createdOrder = orderService.createOrder(userId, createOrderRequest);
+            if (createdOrder.getOrderItems() != null) {
+                for (var orderItem : createdOrder.getOrderItems()) {
+                    log.info("Tracking PURCHASE interaction for user {} on product {} (quantity: {})",
+                            userId, orderItem.getProductId(), orderItem.getQuantity());
+                    aiClientService.trackInteraction(userId, orderItem.getProductId(), "PURCHASE");
+                }
+            }
+
             return ResponseEntity.status(HttpStatus.CREATED).body(createdOrder);
-        } catch (IllegalArgumentException e)
-        {
+        } catch (IllegalArgumentException e) {
             log.error("Error creating order: {}", e.getMessage());
             return ResponseEntity.badRequest().build();
-        } catch (Exception e)
-        {
+        } catch (Exception e) {
             log.error("Unexpected error creating order", e);
-            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
-                    .build();
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build();
         }
     }
 

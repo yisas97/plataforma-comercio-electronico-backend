@@ -18,6 +18,7 @@ import pe.com.prueba.plataformacontrolcomercio.dto.cart.AddToCartRequest;
 import pe.com.prueba.plataformacontrolcomercio.dto.cart.CartItemDTO;
 import pe.com.prueba.plataformacontrolcomercio.dto.cart.UpdateCartItemRequest;
 import pe.com.prueba.plataformacontrolcomercio.service.cart.ICartService;
+import pe.com.prueba.plataformacontrolcomercio.service.ia.IAIClientService;
 import pe.com.prueba.plataformacontrolcomercio.util.TokenUtils;
 
 import java.util.List;
@@ -30,12 +31,15 @@ public class CartController
 
     private final ICartService cartService;
     private final TokenUtils tokenUtils;
+    private final IAIClientService aiClientService;
 
     @Autowired
-    public CartController(ICartService cartService, TokenUtils tokenUtils)
+    public CartController(ICartService cartService, TokenUtils tokenUtils,
+            IAIClientService aiClientService)
     {
         this.cartService = cartService;
         this.tokenUtils = tokenUtils;
+        this.aiClientService = aiClientService;
     }
 
     @GetMapping("/items")
@@ -55,22 +59,22 @@ public class CartController
     @PostMapping("/add")
     public ResponseEntity<CartItemDTO> addToCart(
             @Valid @RequestBody AddToCartRequest addRequest,
-            HttpServletRequest request)
-    {
+            HttpServletRequest request) {
 
         Long userId = tokenUtils.getUserIdFromRequest(request);
-        if (userId == null)
-        {
+        if (userId == null) {
             return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build();
         }
 
-        try
-        {
+        try {
             CartItemDTO cartItem = cartService.addToCart(userId,
                     addRequest.getProductId(), addRequest.getQuantity());
+            log.info("Tracking ADD_TO_CART interaction for user {} on product {} (quantity: {})",
+                    userId, addRequest.getProductId(), addRequest.getQuantity());
+            aiClientService.trackInteraction(userId, addRequest.getProductId(), "ADD_TO_CART");
+
             return ResponseEntity.ok(cartItem);
-        } catch (IllegalArgumentException e)
-        {
+        } catch (IllegalArgumentException e) {
             return ResponseEntity.badRequest().build();
         }
     }
