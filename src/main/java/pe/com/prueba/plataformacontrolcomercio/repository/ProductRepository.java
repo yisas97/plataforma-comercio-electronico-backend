@@ -52,4 +52,15 @@ public interface ProductRepository extends JpaRepository<Product, Long>
     @Query("SELECT p FROM Product p WHERE " + "LOWER(p.producer.businessName) LIKE LOWER(CONCAT('%', :producerName, '%')) " + "AND p.producer.approved = true")
     List<Product> findByProducerBusinessNameContainingIgnoreCaseAndProducerApprovedTrue(
             @Param("producerName") String producerName);
+
+    @Query("SELECT p FROM Product p WHERE p.producer.approved = true AND p.active = true")
+    List<Product> findActiveProductsForMarketplace();
+
+    @Query("SELECT p FROM Product p WHERE p.producer.id = :producerId AND p.producer.approved = true AND p.active = true")
+    List<Product> findActiveByProducerIdAndProducerApprovedTrue(
+            @Param("producerId") Long producerId);
+
+    @Query("SELECT p FROM Product p WHERE " + "LOWER(p.producer.businessName) LIKE LOWER(CONCAT('%', :producerName, '%')) " + "AND p.producer.approved = true AND p.active = true")
+    List<Product> findActiveByProducerBusinessNameContainingIgnoreCaseAndProducerApprovedTrue(
+            @Param("producerName") String producerName);
 }

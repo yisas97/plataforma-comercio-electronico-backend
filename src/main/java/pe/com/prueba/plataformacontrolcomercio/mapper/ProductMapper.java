@@ -38,6 +38,7 @@ public class ProductMapper
         product.setSku(dto.getSku());
         product.setCreatedAt(dto.getCreatedAt());
         product.setUpdatedAt(dto.getUpdatedAt());
+        product.setActive(dto.getActive() != null ? dto.getActive() : true);
 
         if (dto.getProducerId() != null)
         {

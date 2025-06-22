@@ -3,10 +3,12 @@ package pe.com.prueba.plataformacontrolcomercio.service;
 import com.fasterxml.jackson.core.type.TypeReference;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import pe.com.prueba.plataformacontrolcomercio.dto.ProductDTO;
 import pe.com.prueba.plataformacontrolcomercio.dto.producer.ProducerMarketplaceDTO;
+import pe.com.prueba.plataformacontrolcomercio.exception.ProductDeletionException;
 import pe.com.prueba.plataformacontrolcomercio.mapper.ProductMapper;
 import pe.com.prueba.plataformacontrolcomercio.model.Category;
 import pe.com.prueba.plataformacontrolcomercio.model.Product;
@@ -14,11 +16,13 @@ import pe.com.prueba.plataformacontrolcomercio.model.ProductCategory;
 import pe.com.prueba.plataformacontrolcomercio.model.ProductTag;
 import pe.com.prueba.plataformacontrolcomercio.model.Tag;
 import pe.com.prueba.plataformacontrolcomercio.repository.CategoryRepository;
+import pe.com.prueba.plataformacontrolcomercio.repository.OrderRepository;
 import pe.com.prueba.plataformacontrolcomercio.repository.ProducerRepository;
 import pe.com.prueba.plataformacontrolcomercio.repository.ProductCategoryRepository;
 import pe.com.prueba.plataformacontrolcomercio.repository.ProductRepository;
 import pe.com.prueba.plataformacontrolcomercio.repository.ProductTagRepository;
 import pe.com.prueba.plataformacontrolcomercio.repository.TagRepository;
+import pe.com.prueba.plataformacontrolcomercio.service.blockchain.IBlockchainService;
 import pe.com.prueba.plataformacontrolcomercio.service.cache.CacheService;
 
 import java.time.LocalDateTime;
@@ -38,6 +42,8 @@ public class ProductService implements IProductService
     private final ProductTagRepository productTagRepository;
     private final ProductMapper productMapper;
     private final CacheService cacheService;
+    private final IBlockchainService blockchainService;
+    private final OrderRepository orderRepository;
 
     @Autowired
     public ProductService(ProductRepository productRepository,
@@ -45,7 +51,9 @@ public class ProductService implements IProductService
             CategoryRepository categoryRepository, TagRepository tagRepository,
             ProductCategoryRepository productCategoryRepository,
             ProductTagRepository productTagRepository,
-            ProductMapper productMapper, CacheService cacheService)
+            ProductMapper productMapper, CacheService cacheService,
+            IBlockchainService blockchainService,
+            OrderRepository orderRepository)
     {
         this.productRepository = productRepository;
         this.producerRepository = producerRepository;
@@ -55,6 +63,8 @@ public class ProductService implements IProductService
         this.productTagRepository = productTagRepository;
         this.productMapper = productMapper;
         this.cacheService = cacheService;
+        this.blockchainService = blockchainService;
+        this.orderRepository = orderRepository;
     }
 
     @Override
@@ -182,6 +192,18 @@ public class ProductService implements IProductService
 
         Product savedProduct = productRepository.save(product);
 
+        try
+        {
+            blockchainService.createProductCertificate(savedProduct,
+                    savedProduct.getProducer());
+            log.info("Certificado Blockchain del producto : {}",
+                    savedProduct.getId());
+        } catch (Exception e)
+        {
+            log.warn("Fallo en crear el certificado del producto:  {}: {}",
+                    savedProduct.getId(), e.getMessage());
+        }
+
         invalidateProductCaches(savedProduct);
         return productMapper.toDTO(savedProduct);
     }
@@ -257,15 +279,51 @@ public class ProductService implements IProductService
                         "Este producto no pertenece al productor especificado");
             }
 
-            productRepository.delete(product);
+            try
+            {
+                boolean hasOrders = orderRepository.existsByProductId(id);
 
-            cacheService.invalidateCache("product:" + id);
-            cacheService.invalidatePattern("products:all");
-            cacheService.invalidatePattern("products:producer:" + producerId);
-            cacheService.invalidatePattern("products:search:*");
-            log.info("Cache invalidated after deleting product: {}", id);
+                if (hasOrders)
+                {
+                    product.setActive(false);
+                    product.setQuantity(0);
+                    product.setUpdatedAt(LocalDateTime.now());
+                    productRepository.save(product);
 
-            return true;
+                    invalidateProductCaches(product);
+
+                    log.info(
+                            "Product {} marked as inactive due to existing orders",
+                            id);
+
+                    throw new ProductDeletionException(
+                            "El producto ha sido marcado como inactivo porque tiene pedidos asociados",
+                            "PRODUCT_HAS_ORDERS", true);
+                } else
+                {
+                    productRepository.delete(product);
+                    log.info("Product {} deleted physically (no orders)", id);
+                }
+
+                invalidateProductCaches(product);
+
+                return true;
+
+            } catch (DataIntegrityViolationException e)
+            {
+                log.warn("Cannot delete product {} due to data integrity", id);
+
+                product.setActive(false);
+                product.setQuantity(0);
+                product.setUpdatedAt(LocalDateTime.now());
+                productRepository.save(product);
+
+                invalidateProductCaches(product);
+
+                throw new ProductDeletionException(
+                        "El producto ha sido marcado como inactivo debido a restricciones de datos",
+                        "DATA_INTEGRITY_ERROR", true);
+            }
         }).orElse(false);
     }
 
@@ -310,6 +368,27 @@ public class ProductService implements IProductService
                 categoryId, productId);
 
         return true;
+    }
+
+    @Transactional
+    public boolean reactivateProduct(Long id, Long producerId)
+    {
+        return productRepository.findById(id).map(product -> {
+            if (!product.getProducer().getId().equals(producerId))
+            {
+                throw new IllegalArgumentException(
+                        "Este producto no pertenece al productor especificado");
+            }
+
+            product.setActive(true);
+            product.setUpdatedAt(LocalDateTime.now());
+            productRepository.save(product);
+
+            invalidateProductCaches(product);
+            log.info("Product {} reactivated", id);
+
+            return true;
+        }).orElse(false);
     }
 
     @Override
@@ -452,16 +531,21 @@ public class ProductService implements IProductService
     public List<ProducerMarketplaceDTO> getApprovedProducersWithStock()
     {
         String cacheKey = "producers:approved:with-stock";
-        return cacheService.getFromCache(cacheKey, List.class,
-                () -> productRepository.findApprovedProducersWithStock());
+        return cacheService.getFromCache(cacheKey,
+                new TypeReference<List<ProducerMarketplaceDTO>>()
+                {
+                }, productRepository::findApprovedProducersWithStock);
     }
 
     @Override
     public List<Product> getProductsByProducerIdForMarketplace(Long producerId)
     {
         String cacheKey = "products:marketplace:producer:" + producerId;
-        return cacheService.getFromCache(cacheKey, List.class,
-                () -> productRepository.findByProducerIdAndProducerApprovedTrue(
+        return cacheService.getFromCache(cacheKey,
+                new TypeReference<List<Product>>()
+                {
+                },
+                () -> productRepository.findActiveByProducerIdAndProducerApprovedTrue(
                         producerId));
     }
 
@@ -470,7 +554,7 @@ public class ProductService implements IProductService
     {
         String cacheKey = "products:search:producer-name:" + producerName.toLowerCase();
         return cacheService.getFromCache(cacheKey, List.class,
-                () -> productRepository.findByProducerBusinessNameContainingIgnoreCaseAndProducerApprovedTrue(
+                () -> productRepository.findActiveByProducerBusinessNameContainingIgnoreCaseAndProducerApprovedTrue(
                         producerName));
     }
 

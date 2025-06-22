@@ -51,4 +51,7 @@ public interface OrderRepository extends JpaRepository<Order, Long>
     @Query("SELECT oi.product.name, SUM(oi.quantity) as totalSold " + "FROM OrderItem oi " + "WHERE oi.product.producer.id = :producerId " + "AND oi.order.status != 'CANCELLED' " + "GROUP BY oi.product.id, oi.product.name " + "ORDER BY totalSold DESC")
     List<Object[]> findBestSellingProductByProducerId(
             @Param("producerId") Long producerId);
+
+    @Query("SELECT COUNT(oi) > 0 FROM OrderItem oi WHERE oi.product.id = :productId")
+    boolean existsByProductId(@Param("productId") Long productId);
 }

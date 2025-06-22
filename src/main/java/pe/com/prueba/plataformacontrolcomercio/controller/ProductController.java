@@ -17,12 +17,17 @@ import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 import pe.com.prueba.plataformacontrolcomercio.dto.ProductDTO;
 import pe.com.prueba.plataformacontrolcomercio.dto.producer.ProducerMarketplaceDTO;
+import pe.com.prueba.plataformacontrolcomercio.exception.ProductDeletionException;
 import pe.com.prueba.plataformacontrolcomercio.mapper.ProductMapper;
 import pe.com.prueba.plataformacontrolcomercio.model.Product;
+import pe.com.prueba.plataformacontrolcomercio.model.blockchain.ProductBlockchain;
 import pe.com.prueba.plataformacontrolcomercio.service.IProductService;
+import pe.com.prueba.plataformacontrolcomercio.service.blockchain.BlockchainService;
 import pe.com.prueba.plataformacontrolcomercio.util.TokenUtils;
 
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 import java.util.stream.Collectors;
 
@@ -35,14 +40,17 @@ public class ProductController
     private final IProductService productService;
     private final TokenUtils tokenUtils;
     private final ProductMapper productMapper;
+    private final BlockchainService blockchainService;
 
     @Autowired
     public ProductController(IProductService productService,
-            TokenUtils tokenUtils, ProductMapper productMapper)
+            TokenUtils tokenUtils, ProductMapper productMapper,
+            BlockchainService blockchainService)
     {
         this.productService = productService;
         this.tokenUtils = tokenUtils;
         this.productMapper = productMapper;
+        this.blockchainService = blockchainService;
     }
 
     @GetMapping("/all")
@@ -76,7 +84,7 @@ public class ProductController
         List<ProductDTO> products = productService.getProductsByProducerId(
                         producerId).stream().map(productMapper::toDTO)
                 .collect(Collectors.toList());
-        log.info("getMyProducts products: " + products);
+        log.info("getMyProducts products final: " + products);
         return ResponseEntity.ok(products);
     }
 
@@ -91,6 +99,7 @@ public class ProductController
         }
 
         Optional<Product> product = productService.getProductById(id);
+        log.info("getProductById: " + product);
 
         if (product.isPresent() && product.get().getProducer().getId()
                 .equals(producerId))
@@ -237,8 +246,8 @@ public class ProductController
     }
 
     @DeleteMapping("/{id}")
-    public ResponseEntity<Void> deleteProduct(@PathVariable Long id,
-            HttpServletRequest request)
+    public ResponseEntity<Map<String, Object>> deleteProduct(
+            @PathVariable Long id, HttpServletRequest request)
     {
         Long producerId = tokenUtils.getProducerIdFromRequest(request);
         if (producerId == null)
@@ -248,12 +257,66 @@ public class ProductController
 
         try
         {
-            return productService.deleteProduct(id, producerId) ?
-                    ResponseEntity.noContent().build() :
-                    ResponseEntity.notFound().build();
+            boolean deleted = productService.deleteProduct(id, producerId);
+
+            Map<String, Object> response = new HashMap<>();
+            response.put("success", true);
+            response.put("message", "Producto eliminado correctamente");
+            response.put("deleted", deleted);
+
+            return ResponseEntity.ok(response);
+
+        } catch (ProductDeletionException e)
+        {
+            Map<String, Object> response = new HashMap<>();
+            response.put("success", false);
+            response.put("message", e.getMessage());
+            response.put("errorCode", e.getErrorCode());
+            response.put("markedInactive", e.canMarkInactive());
+
+            return ResponseEntity.ok(
+                    response); // 200 porque la operación fue "exitosa"
+
         } catch (IllegalArgumentException e)
         {
+            Map<String, Object> response = new HashMap<>();
+            response.put("success", false);
+            response.put("message", e.getMessage());
+            response.put("errorCode", "FORBIDDEN");
+
+            return ResponseEntity.status(HttpStatus.FORBIDDEN).body(response);
+        }
+    }
+
+    @PutMapping("/{id}/reactivate")
+    public ResponseEntity<Map<String, Object>> reactivateProduct(
+            @PathVariable Long id, HttpServletRequest request)
+    {
+        Long producerId = tokenUtils.getProducerIdFromRequest(request);
+        if (producerId == null)
+        {
             return ResponseEntity.status(HttpStatus.FORBIDDEN).build();
+        }
+
+        try
+        {
+            boolean reactivated = productService.reactivateProduct(id,
+                    producerId);
+
+            Map<String, Object> response = new HashMap<>();
+            response.put("success", true);
+            response.put("message", "Producto reactivado correctamente");
+            response.put("reactivated", reactivated);
+
+            return ResponseEntity.ok(response);
+
+        } catch (IllegalArgumentException e)
+        {
+            Map<String, Object> response = new HashMap<>();
+            response.put("success", false);
+            response.put("message", e.getMessage());
+
+            return ResponseEntity.status(HttpStatus.FORBIDDEN).body(response);
         }
     }
 
@@ -465,5 +528,50 @@ public class ProductController
                 .map(productMapper::toDTO).collect(Collectors.toList());
 
         return ResponseEntity.ok(products);
+    }
+
+    @GetMapping("/{id}/certificate")
+    public ResponseEntity<ProductBlockchain> getProductCertificate(
+            @PathVariable Long id, HttpServletRequest request)
+    {
+
+        Optional<ProductBlockchain> certificate = blockchainService.getCertificateByProductId(
+                id);
+
+        return certificate.map(ResponseEntity::ok)
+                .orElse(ResponseEntity.notFound().build());
+    }
+
+    @GetMapping("/marketplace/{id}/certificate")
+    public ResponseEntity<ProductBlockchain> getMarketplaceCertificate(
+            @PathVariable Long id)
+    {
+        log.info("Getting certificate for marketplace product: {}", id);
+
+        Optional<ProductBlockchain> certificate = blockchainService.getCertificateByProductId(
+                id);
+
+        return certificate.map(ResponseEntity::ok)
+                .orElse(ResponseEntity.notFound().build());
+    }
+
+    @GetMapping("/certificate/verify/{hash}")
+    public ResponseEntity<Map<String, Object>> verifyCertificate(
+            @PathVariable String hash)
+    {
+        log.info("Verifying certificate with hash: {}", hash);
+
+        boolean isValid = blockchainService.verifyCertificate(hash);
+        Optional<ProductBlockchain> certificate = blockchainService.getCertificateByHash(
+                hash);
+
+        Map<String, Object> response = new HashMap<>();
+        response.put("isValid", isValid);
+        if (certificate.isPresent())
+        {
+            response.put("certificate", certificate.get());
+        }
+
+        return ResponseEntity.ok(response);
     }
 }

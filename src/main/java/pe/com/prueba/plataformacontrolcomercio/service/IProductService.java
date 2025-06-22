@@ -53,4 +53,6 @@ public interface IProductService
     List<Product> getProductsByProducerIdForMarketplace(Long producerId);
 
     List<Product> searchProductsByProducerName(String producerName);
+
+    boolean reactivateProduct(Long id, Long producerId);
 }

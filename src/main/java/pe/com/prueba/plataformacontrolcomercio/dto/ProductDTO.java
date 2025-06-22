@@ -46,7 +46,7 @@ public class ProductDTO
         this.updatedAt = product.getUpdatedAt();
 
         this.stock = product.getQuantity();
-        this.active = true;
+        this.active = product.getActive() != null ? product.getActive() : true;
         this.inventoryStatus = getInventoryStatus(product.getQuantity());
         this.rating = 4.5;
         this.image = product.getImage() != null ?

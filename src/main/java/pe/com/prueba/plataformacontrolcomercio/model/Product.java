@@ -3,6 +3,7 @@ package pe.com.prueba.plataformacontrolcomercio.model;
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import jakarta.persistence.CascadeType;
+import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
@@ -48,6 +49,9 @@ public class Product
     private LocalDateTime createdAt;
     private LocalDateTime updatedAt;
     private String image;
+
+    @Column(name = "active")
+    private Boolean active;
 
     @ManyToOne
     @JoinColumn(name = "producer_id", nullable = false)
