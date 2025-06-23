@@ -34,6 +34,9 @@ public class ProductDTO
     private String producerName;
     private String producerLocation;
 
+    private Double aiRecommendationScore;
+    private String aiRecommendationReason;
+
     public ProductDTO(Product product)
     {
         this.id = product.getId();

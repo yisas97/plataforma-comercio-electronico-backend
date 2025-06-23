@@ -2,10 +2,15 @@ package pe.com.prueba.plataformacontrolcomercio.mapper;
 
 import org.springframework.stereotype.Component;
 import pe.com.prueba.plataformacontrolcomercio.dto.ProductDTO;
+import pe.com.prueba.plataformacontrolcomercio.dto.ia.AIRecommendationDTO;
 import pe.com.prueba.plataformacontrolcomercio.model.Product;
 import pe.com.prueba.plataformacontrolcomercio.repository.CategoryRepository;
 import pe.com.prueba.plataformacontrolcomercio.repository.ProducerRepository;
 import pe.com.prueba.plataformacontrolcomercio.repository.TagRepository;
+
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Optional;
 
 @Component
 public class ProductMapper

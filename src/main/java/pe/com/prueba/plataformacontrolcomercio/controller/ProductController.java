@@ -16,6 +16,8 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 import pe.com.prueba.plataformacontrolcomercio.dto.ProductDTO;
+import pe.com.prueba.plataformacontrolcomercio.dto.ia.AIRecommendationDTO;
+import pe.com.prueba.plataformacontrolcomercio.dto.ia.PopularRecommendationDTO;
 import pe.com.prueba.plataformacontrolcomercio.dto.producer.ProducerMarketplaceDTO;
 import pe.com.prueba.plataformacontrolcomercio.exception.ProductDeletionException;
 import pe.com.prueba.plataformacontrolcomercio.mapper.ProductMapper;
@@ -26,6 +28,7 @@ import pe.com.prueba.plataformacontrolcomercio.service.blockchain.BlockchainServ
 import pe.com.prueba.plataformacontrolcomercio.service.ia.IAIClientService;
 import pe.com.prueba.plataformacontrolcomercio.util.TokenUtils;
 
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -599,10 +602,19 @@ public class ProductController
             log.info("Getting AI recommendations for user: {}", userId);
 
             String url = aiClientService.getAiServiceUrl() + "/api/ai/recommendations/" + userId + "?limit=" + limit;
-            ProductDTO[] recommendations = aiClientService.getRestTemplate().getForObject(url, ProductDTO[].class);
+            log.info("URL: {}", url);
 
-            if (recommendations != null && recommendations.length > 0) {
-                return ResponseEntity.ok(List.of(recommendations));
+            AIRecommendationDTO[] aiRecommendations = aiClientService.getRestTemplate()
+                    .getForObject(url, AIRecommendationDTO[].class);
+
+            if (aiRecommendations != null && aiRecommendations.length > 0) {
+                log.info("Found {} AI recommendations", aiRecommendations.length);
+
+                List<ProductDTO> productRecommendations = convertAIRecommendationsToProducts(aiRecommendations);
+
+                if (!productRecommendations.isEmpty()) {
+                    return ResponseEntity.ok(productRecommendations);
+                }
             }
 
         } catch (Exception e) {
@@ -620,10 +632,16 @@ public class ProductController
             log.info("Getting popular recommendations from AI service");
 
             String url = aiClientService.getAiServiceUrl() + "/api/ai/recommendations/popular?limit=" + limit;
-            ProductDTO[] recommendations = aiClientService.getRestTemplate().getForObject(url, ProductDTO[].class);
+            AIRecommendationDTO[] recommendations = aiClientService.getRestTemplate().getForObject(url, AIRecommendationDTO[].class);
 
             if (recommendations != null && recommendations.length > 0) {
-                return ResponseEntity.ok(List.of(recommendations));
+                log.info("Found {} recommendations", recommendations.length);
+
+                List<ProductDTO> productRecommendations = convertAIRecommendationsToProducts(recommendations);
+
+                if (!productRecommendations.isEmpty()) {
+                    return ResponseEntity.ok(productRecommendations);
+                }
             }
 
         } catch (Exception e) {
@@ -699,5 +717,68 @@ public class ProductController
             log.debug("No user authenticated in request");
             return null;
         }
+    }
+
+    private List<ProductDTO> convertAIRecommendationsToProducts(
+            AIRecommendationDTO[] aiRecommendations) {
+        List<ProductDTO> products = new ArrayList<>();
+
+        for (AIRecommendationDTO aiRec : aiRecommendations) {
+            try {
+                Optional<Product> productOpt = productService.getProductById(aiRec.getProductId());
+
+                if (productOpt.isPresent()) {
+                    Product product = productOpt.get();
+                    ProductDTO productDTO = productMapper.toDTO(product);
+
+                    productDTO.setAiRecommendationScore(aiRec.getRecommendationScore());
+                    productDTO.setAiRecommendationReason(aiRec.getReason());
+
+                    products.add(productDTO);
+
+                } else {
+                    log.warn("Product with ID {} from AI recommendations not found", aiRec.getProductId());
+                }
+
+            } catch (Exception e) {
+                log.error("Error converting AI recommendation for product {}: {}",
+                        aiRec.getProductId(), e.getMessage());
+            }
+        }
+
+        log.info("Converted {} AI recommendations to ProductDTOs", products.size());
+        return products;
+    }
+
+    @GetMapping("/user/stats")
+    public ResponseEntity<Map<String, Object>> getUserStats(HttpServletRequest request) {
+        Long userId = getUserIdFromRequest(request);
+        if (userId == null) {
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build();
+        }
+
+        try {
+            log.info("Getting user stats for user: {}", userId);
+
+            String url = aiClientService.getAiServiceUrl() + "/api/ai/profile/" + userId;
+            Map<String, Object> aiProfile = aiClientService.getRestTemplate()
+                    .getForObject(url, Map.class);
+
+            if (aiProfile != null) {
+                return ResponseEntity.ok(aiProfile);
+            }
+
+        } catch (Exception e) {
+            log.error("Error getting user stats: {}", e.getMessage());
+        }
+
+        // Fallback: estadísticas básicas desde la base de datos local
+        Map<String, Object> basicStats = new HashMap<>();
+        basicStats.put("totalViews", 0);
+        basicStats.put("totalPurchases", 0);
+        basicStats.put("favoriteCategory", "Sin datos");
+        basicStats.put("lastActivity", null);
+
+        return ResponseEntity.ok(basicStats);
     }
 }
