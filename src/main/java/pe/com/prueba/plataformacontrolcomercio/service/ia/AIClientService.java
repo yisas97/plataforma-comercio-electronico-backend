@@ -14,7 +14,7 @@ import java.util.Map;
 @Slf4j
 public class AIClientService implements IAIClientService{
 
-    @Value("${ai.service.url:http://localhost:8084}")
+    @Value("${ai.service.url}")
     private String aiServiceUrl;
 
     private final RestTemplate restTemplate;
