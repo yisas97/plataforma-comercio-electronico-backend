@@ -23,12 +23,26 @@ public class CacheConfig
     @Value("${spring.data.redis.database:0}")
     private int redisDatabase;
 
+    @Value("${spring.data.redis.username:}")
+    private String redisUsername;
+
+    @Value("${spring.data.redis.password:}")
+    private String redisPassword;
+
     @Bean
     public LettuceConnectionFactory redisConnectionFactory()
     {
         RedisStandaloneConfiguration config = new RedisStandaloneConfiguration(
                 redisHost, redisPort);
         config.setDatabase(redisDatabase);
+        if (!redisUsername.isEmpty()) {
+            config.setUsername(redisUsername);
+        }
+        if (!redisPassword.isEmpty()) {
+            config.setPassword(redisPassword);
+        }
+
+        log.info("Configurando Redis: {}:{} - DB: {}", redisHost, redisPort, redisDatabase);
         return new LettuceConnectionFactory(config);
     }
 
